@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'AdminLTE 3',
+    'title' => 'Sistema Camiri',
     'title_prefix' => '',
     'title_postfix' => '',
 
@@ -63,7 +63,7 @@ return [
     |
     */
 
-    'logo' => '<b>Admin</b>LTE',
+    'logo' => '<b>Sistema</b>Camiri',
     'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
@@ -298,96 +298,89 @@ return [
         [
             'type' => 'navbar-search',
             'text' => 'search',
-            'topnav_right' => true,
+            'topnav_right' => false,
         ],
         [
             'type' => 'fullscreen-widget',
-            'topnav_right' => true,
+            'topnav_right' => false,
         ],
+        
 
         // Sidebar items:
-        [
-            'type' => 'sidebar-menu-search',
-            'text' => 'search',
-        ],
+       
         [
             'text' => 'blog',
             'url' => 'admin/blog',
             'can' => 'manage-blog',
         ],
+       
         [
-            'text' => 'pages',
-            'url' => 'admin/pages',
-            'icon' => 'far fa-fw fa-file',
-            'label' => 4,
-            'label_color' => 'success',
-        ],
-        ['header' => 'account_settings'],
-        [
-            'text' => 'profile',
-            'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-user',
-        ],
-        [
-            'text' => 'change_password',
-            'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-lock',
-        ],
-        [
-            'text' => 'multilevel',
-            'icon' => 'fas fa-fw fa-share',
+            'text' => 'Punto de Venta',
+            'icon' => 'fa solid fa-cash-register',
             'submenu' => [
                 [
-                    'text' => 'level_one',
-                    'url' => '#',
+                    'text' => 'Ventas',
+                    'icon' => 'fa solid fa-cash-register',
+                    'url' => 'ventas',
+                ],
+                
+                [
+                    'text' => 'Cajas',
+                    'icon' => 'fa solid fa-cash-register',
+                    'url' => 'cajas',
+                ],
+            ],
+        ],
+        [
+            'text' => 'Panel de Control',
+            'icon' => 'fa fa-cog',
+            'submenu' => [
+                [
+                    'text' => 'Inventarios',
+                    'url' => 'inventarios',
+                ],
+                
+                [
+                    'text' => 'Productos',
+                    'url' => 'productos',
                 ],
                 [
-                    'text' => 'level_one',
-                    'url' => '#',
-                    'submenu' => [
-                        [
-                            'text' => 'level_two',
-                            'url' => '#',
-                        ],
-                        [
-                            'text' => 'level_two',
-                            'url' => '#',
-                            'submenu' => [
-                                [
-                                    'text' => 'level_three',
-                                    'url' => '#',
-                                ],
-                                [
-                                    'text' => 'level_three',
-                                    'url' => '#',
-                                ],
-                            ],
-                        ],
-                    ],
+                    'text' => 'Sucursales',
+                    'url' => 'sucursales',
                 ],
                 [
-                    'text' => 'level_one',
+                    'text' => 'Proveedores',
+                    'url' => 'proveedores',
+                ],
+                [
+                    'text' => 'Iva',
+                    'url' => 'ivas',
+                ],
+                [
+                    'text' => 'Categorias',
+                    'url' => 'categorias',
+                ],
+                [
+                    'text' => 'Metodos de Pago',
+                    'url' => 'metodos-pagos',
+                ],
+                [
+                    'text' => 'Pedidos',
+                    'url' => 'pedidos',
+                ],
+                [
+                    'text' => 'Pagos de Proveedores',
+                    'url' => 'pagos-proveedors',
+                ],
+                [
+                    'text' => 'Productos',
                     'url' => '#',
                 ],
             ],
         ],
-        ['header' => 'labels'],
-        [
-            'text' => 'important',
-            'icon_color' => 'red',
-            'url' => '#',
-        ],
-        [
-            'text' => 'warning',
-            'icon_color' => 'yellow',
-            'url' => '#',
-        ],
-        [
-            'text' => 'information',
-            'icon_color' => 'cyan',
-            'url' => '#',
-        ],
+        
     ],
+    
 
     /*
     |--------------------------------------------------------------------------
