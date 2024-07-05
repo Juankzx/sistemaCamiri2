@@ -28,14 +28,20 @@ use Illuminate\Database\Eloquent\Model;
 class Producto extends Model
 {
     
-    protected $perPage = 20;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = ['categoria_id', 'proveedor_id', 'nombre', 'imagen', 'precioCompra', 'precioVenta', 'cantidad'];
+
+    protected $fillable = [
+        'codigo_barra',
+        'nombre',
+        'unidadmedida_id',
+        'imagen',
+        'preciocompra',
+        'precioventa',
+        'categoria_id',
+        'proveedor_id',
+        'estado',
+    ];
+
 
 
     /**
@@ -49,7 +55,7 @@ class Producto extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function proveedore()
+    public function proveedor()
     {
         return $this->belongsTo(\App\Models\Proveedore::class, 'proveedor_id', 'id');
     }
@@ -61,13 +67,19 @@ class Producto extends Model
     {
         return $this->hasMany(\App\Models\DetallesVentum::class, 'id', 'producto_id');
     }
+
+    public function inventarios()
+    {
+        return $this->hasMany(Inventario::class);
+    }
     
+    public function unidadMedida()
+    {
+        return $this->belongsTo(\App\Models\UnidadMedida::class, 'unidadmedida_id');
+    }
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function inventarios()
-    {
-        return $this->hasMany(\App\Models\Inventario::class, 'id', 'producto_id');
-    }
+
     
 }

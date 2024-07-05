@@ -35,13 +35,20 @@ class ProveedoreController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ProveedoreRequest $request): RedirectResponse
-    {
-        Proveedore::create($request->validated());
+    public function store(Request $request)
+{
+    $request->validate([
+        'nombre' => 'required|string|max:255',
+        'rut' => 'required|string|max:20|unique:proveedores,rut', // Validación de RUT único
+        'direccion' => 'nullable|string|max:255',
+        'telefono' => 'nullable|string|max:20',
+        'email' => 'nullable|email|max:255'
+    ]);
 
-        return Redirect::route('proveedores.index')
-            ->with('success', 'Proveedore created successfully.');
-    }
+    Proveedore::create($request->all());
+
+    return redirect()->route('proveedores.index')->with('success', 'Proveedor creado con éxito.');
+}
 
     /**
      * Display the specified resource.

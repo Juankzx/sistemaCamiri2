@@ -332,50 +332,76 @@ return [
             ],
         ],
         [
-            'text' => 'Panel de Control',
-            'icon' => 'fa fa-cog',
+            'text' => 'Compras',
+            
             'submenu' => [
+                [
+                    'text' => 'Orden de Compras',
+                    'url' => 'ordenes-compras',
+                ],
+                [
+                    'text' => 'Guias de Despacho',
+                    'url' => 'guias-despacho',
+                ],
+                [
+                    'text' => 'Facturas',
+                    'url' => 'facturas',
+                ],
+                [
+                    'text' => 'Pagos',
+                    'url' => 'pagos',
+                ],
+            ],
+        ],
+        [
+            'text' => 'Inventario',
+            
+            'submenu' => [
+                [
+                    'text' => 'Movimientos Inventario',
+                    'url' => 'movimientos',
+                ],
                 [
                     'text' => 'Inventarios',
                     'url' => 'inventarios',
                 ],
-                
                 [
                     'text' => 'Productos',
                     'url' => 'productos',
                 ],
                 [
-                    'text' => 'Sucursales',
-                    'url' => 'sucursales',
+                    'text' => 'Bodegas',
+                    'url' => 'bodegas',
+                ],
+                [
+                    'text' => 'Categorias',
+                    'url' => 'categorias',
+                ],
+            ],
+        ],
+        [
+            'text' => 'Panel de Control',
+            'icon' => 'fa fa-cog',
+            'submenu' => [
+                
+                
+                [
+                    'text' => 'Metodos de Pago',
+                    'url' => 'metodos-pagos',
                 ],
                 [
                     'text' => 'Proveedores',
                     'url' => 'proveedores',
                 ],
                 [
-                    'text' => 'Iva',
-                    'url' => 'ivas',
+                    'text' => 'Sucursales',
+                    'url' => 'sucursales',
                 ],
                 [
-                    'text' => 'Categorias',
-                    'url' => 'categorias',
+                    'text' => 'Unidad de Medida',
+                    'url' => 'unidades',
                 ],
-                [
-                    'text' => 'Metodos de Pago',
-                    'url' => 'metodos-pagos',
-                ],
-                [
-                    'text' => 'Pedidos',
-                    'url' => 'pedidos',
-                ],
-                [
-                    'text' => 'Pagos de Proveedores',
-                    'url' => 'pagos-proveedors',
-                ],
-                [
-                    'text' => 'Productos',
-                    'url' => '#',
-                ],
+               
             ],
         ],
         

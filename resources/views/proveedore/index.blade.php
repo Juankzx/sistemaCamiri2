@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('adminlte::page')
 
 @section('template_title')
     Proveedores
@@ -18,7 +18,7 @@
 
                              <div class="float-right">
                                 <a href="{{ route('proveedores.create') }}" class="btn btn-primary btn-sm float-right"  data-placement="left">
-                                  {{ __('Create New') }}
+                                  {{ __('+ Agregar') }}
                                 </a>
                               </div>
                         </div>
@@ -34,9 +34,10 @@
                             <table class="table table-striped table-hover">
                                 <thead class="thead">
                                     <tr>
-                                        <th>No</th>
+                                        <th>N°</th>
                                         
 									<th >Nombre</th>
+                                    <th >Rut</th>
 									<th >Direccion</th>
 									<th >Telefono</th>
 									<th >Email</th>
@@ -50,17 +51,18 @@
                                             <td>{{ ++$i }}</td>
                                             
 										<td >{{ $proveedore->nombre }}</td>
+                                        <td >{{ $proveedore->rut }}</td>
 										<td >{{ $proveedore->direccion }}</td>
 										<td >{{ $proveedore->telefono }}</td>
 										<td >{{ $proveedore->email }}</td>
 
                                             <td>
                                                 <form action="{{ route('proveedores.destroy', $proveedore->id) }}" method="POST">
-                                                    <a class="btn btn-sm btn-primary " href="{{ route('proveedores.show', $proveedore->id) }}"><i class="fa fa-fw fa-eye"></i> {{ __('Show') }}</a>
-                                                    <a class="btn btn-sm btn-success" href="{{ route('proveedores.edit', $proveedore->id) }}"><i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}</a>
+                                                    <a class="btn btn-sm btn-primary " href="{{ route('proveedores.show', $proveedore->id) }}"><i class="fa fa-fw fa-eye"></i></a>
+                                                    <a class="btn btn-sm btn-success" href="{{ route('proveedores.edit', $proveedore->id) }}"><i class="fa fa-fw fa-edit"></i></a>
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;"><i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}</button>
+                                                    <button type="submit" class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;"><i class="fa fa-fw fa-trash"></i></button>
                                                 </form>
                                             </td>
                                         </tr>

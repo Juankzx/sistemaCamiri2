@@ -32,7 +32,14 @@ class DetallesVentum extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['venta_id', 'producto_id', 'iva_id', 'cantidad', 'precio_unitario'];
+    protected $table = 'detalles_ventas';
+
+    protected $fillable = [
+        'venta_id', 
+        'producto_id', 
+        'inventario_id', 
+        'cantidad', 
+        'precio_unitario'];
 
 
     /**
@@ -57,6 +64,16 @@ class DetallesVentum extends Model
     public function venta()
     {
         return $this->belongsTo(\App\Models\Venta::class, 'venta_id', 'id');
+    }
+
+    public function inventarios()
+    {
+        return $this->belongsTo(\App\Models\Inventario::class, 'inventario_id', 'id');
+    }
+
+    public function sucursal()
+    {
+        return $this->belongsTo(\App\Models\Sucursale::class, 'sucursal_id', 'id');
     }
     
 }

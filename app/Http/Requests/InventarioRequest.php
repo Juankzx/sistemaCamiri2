@@ -23,9 +23,8 @@ class InventarioRequest extends FormRequest
     {
         return [
 			'producto_id' => 'required',
+			'sucursal_id' => 'required',
 			'cantidad' => 'required',
-			'tipo_movimiento' => 'required|string',
-			'fecha' => 'required',
         ];
     }
 }

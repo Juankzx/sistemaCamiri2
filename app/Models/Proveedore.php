@@ -30,7 +30,7 @@ class Proveedore extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['nombre', 'direccion', 'telefono', 'email'];
+    protected $fillable = ['nombre', 'rut', 'direccion', 'telefono', 'email'];
 
 
     /**

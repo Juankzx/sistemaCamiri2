@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('adminlte::page')
 
 @section('template_title')
     {{ $inventario->name ?? __('Show') . " " . __('Inventario') }}
@@ -25,16 +25,12 @@
                                     {{ $inventario->producto_id }}
                                 </div>
                                 <div class="form-group mb-2 mb20">
+                                    <strong>Sucursal Id:</strong>
+                                    {{ $inventario->sucursal_id }}
+                                </div>
+                                <div class="form-group mb-2 mb20">
                                     <strong>Cantidad:</strong>
                                     {{ $inventario->cantidad }}
-                                </div>
-                                <div class="form-group mb-2 mb20">
-                                    <strong>Tipo Movimiento:</strong>
-                                    {{ $inventario->tipo_movimiento }}
-                                </div>
-                                <div class="form-group mb-2 mb20">
-                                    <strong>Fecha:</strong>
-                                    {{ $inventario->fecha }}
                                 </div>
 
                     </div>

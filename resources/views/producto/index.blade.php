@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('adminlte::page')
 
 @section('template_title')
     Productos
@@ -18,7 +18,7 @@
 
                              <div class="float-right">
                                 <a href="{{ route('productos.create') }}" class="btn btn-primary btn-sm float-right"  data-placement="left">
-                                  {{ __('Create New') }}
+                                  {{ __('+ Agregar') }}
                                 </a>
                               </div>
                         </div>
@@ -34,17 +34,19 @@
                             <table class="table table-striped table-hover">
                                 <thead class="thead">
                                     <tr>
-                                        <th>No</th>
-                                        
-									<th >Categoria Id</th>
-									<th >Proveedor Id</th>
-									<th >Nombre</th>
-									<th >Imagen</th>
-									<th >Preciocompra</th>
-									<th >Precioventa</th>
-									<th >Cantidad</th>
-
-                                        <th></th>
+                                    <th>N°</th>   
+									<th >Codigo de Barras</th>
+                                    <th >Nombre</th>
+                                    <th >Unidad de Medida</th>
+                                    <th >Imagen</th>
+									<th >Precio Compra</th>
+									<th >Precio Venta</th>
+                                    <th >Categoria</th>
+									<th >Proveedor</th>
+                                    <th >Estado</th>
+                                    
+                                    
+									<th >Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -52,21 +54,30 @@
                                         <tr>
                                             <td>{{ ++$i }}</td>
                                             
-										<td >{{ $producto->categoria_id }}</td>
-										<td >{{ $producto->proveedor_id }}</td>
-										<td >{{ $producto->nombre }}</td>
-										<td >{{ $producto->imagen }}</td>
-										<td >{{ $producto->precioCompra }}</td>
-										<td >{{ $producto->precioVenta }}</td>
-										<td >{{ $producto->cantidad }}</td>
+                                            <td >{{ $producto->codigo_barra }}</td>
+                                            <td >{{ $producto->nombre }}</td>
+                                            <td >{{ $producto->unidadmedida->nombre }} - {{ $producto->unidadmedida->abreviatura }}</td>
+										<td >
+                                        @if($producto->imagen)
+                                            <img src="{{ Storage::url($producto->imagen) }}" alt="{{ $producto->nombre }}" width="75">
+                                        @endif
+                                        </td>
+										<td >{{ $producto->preciocompra }}</td>
+										<td >{{ $producto->precioventa }}</td>
+                                        <td >{{ $producto->categoria->nombre ?? 'Sin categoria'}}</td>
+										<td >{{ $producto->proveedor->nombre?? 'Sin proveedor'}}</td>
+                                        <td>{{ $producto->estado ? 'Activo' : 'Inactivo' }}</td>
+                                        
+                                        
+										
 
                                             <td>
                                                 <form action="{{ route('productos.destroy', $producto->id) }}" method="POST">
-                                                    <a class="btn btn-sm btn-primary " href="{{ route('productos.show', $producto->id) }}"><i class="fa fa-fw fa-eye"></i> {{ __('Show') }}</a>
-                                                    <a class="btn btn-sm btn-success" href="{{ route('productos.edit', $producto->id) }}"><i class="fa fa-fw fa-edit"></i> {{ __('Edit') }}</a>
+                                                    <a class="btn btn-sm btn-primary " href="{{ route('productos.show', $producto->id) }}"><i class="fa fa-fw fa-eye"></i></a>
+                                                    <a class="btn btn-sm btn-success" href="{{ route('productos.edit', $producto->id) }}"><i class="fa fa-fw fa-edit"></i></a>
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;"><i class="fa fa-fw fa-trash"></i> {{ __('Delete') }}</button>
+                                                    <button type="submit" class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('¿Quieres Borrar el item?') ? this.closest('form').submit() : false;"><i class="fa fa-fw fa-trash"></i></button>
                                                 </form>
                                             </td>
                                         </tr>

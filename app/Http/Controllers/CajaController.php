@@ -2,83 +2,96 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Venta;
 use App\Models\Caja;
-use Illuminate\Http\RedirectResponse;
+use App\Models\Sucursale;
 use Illuminate\Http\Request;
-use App\Http\Requests\CajaRequest;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CajaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request): View
+    public function index()
     {
-        $cajas = Caja::paginate();
+        $cajas = Caja::with('sucursal', 'user')->paginate(10);
+        $sucursales = Sucursale::all();
+        $cajaAbierta = Caja::where('estado', true)->first();
 
-        return view('caja.index', compact('cajas'))
-            ->with('i', ($request->input('page', 1) - 1) * $cajas->perPage());
+        // Calcular el monto total de ventas durante el periodo de caja abierta
+        $montoVentas = 0;
+        if ($cajaAbierta) {
+            $montoVentas = Venta::where('fecha', '>=', $cajaAbierta->fecha_apertura)
+                                ->where('sucursal_id', $cajaAbierta->sucursal_id)
+                                ->sum('total');
+        }
+
+        return view('cajas.index', compact('cajas', 'sucursales', 'cajaAbierta', 'montoVentas'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(): View
+    public function abrir(Request $request)
     {
-        $caja = new Caja();
+        $validatedData = $request->validate([
+            'sucursal_id' => 'required|exists:sucursales,id',
+            'monto_apertura' => 'required|numeric|min:0',
+        ]);
 
-        return view('caja.create', compact('caja'));
+        $caja = new Caja([
+            'sucursal_id' => $validatedData['sucursal_id'],
+            'user_id' => Auth::id(),
+            'fecha_apertura' => Carbon::now(),
+            'monto_apertura' => $validatedData['monto_apertura'],
+            'monto_cierre' => 0, // Default value for closing amount
+            'estado' => true,
+        ]);
+        $caja->save();
+
+        return redirect()->route('cajas.index')->with('success', 'Caja abierta con éxito.');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(CajaRequest $request): RedirectResponse
+    public function cerrar(Request $request, $id)
     {
-        Caja::create($request->validated());
+        $validatedData = $request->validate([
+            'monto_cierre' => 'required|numeric',
+        ]);
 
-        return Redirect::route('cajas.index')
-            ->with('success', 'Caja created successfully.');
+        DB::beginTransaction();
+        try {
+            $caja = Caja::findOrFail($id);
+            $caja->fecha_cierre = now();
+            $caja->monto_cierre = $validatedData['monto_cierre'];
+            $caja->estado = false;
+            $caja->save();
+
+            DB::commit();
+            return redirect()->route('cajas.index')->with('success', 'Caja cerrada con éxito.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            \Log::error("Error al cerrar la caja: " . $e->getMessage());
+            return back()->with('error', "Error al cerrar la caja: " . $e->getMessage())->withInput();
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show($id): View
+    public function show($id)
     {
-        $caja = Caja::find($id);
+        // Obtener la caja por su ID
+        $caja = Caja::findOrFail($id);
 
-        return view('caja.show', compact('caja'));
-    }
+        // Obtener las ventas realizadas durante el periodo de apertura de la caja
+        $fechaCierre = $caja->fecha_cierre ? $caja->fecha_cierre : now();
+        $ventas = Venta::whereBetween('created_at', [$caja->fecha_apertura, $fechaCierre])
+            ->where('sucursal_id', $caja->sucursal_id)
+            ->get();
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id): View
-    {
-        $caja = Caja::find($id);
+        // Calcular el total de ventas durante el periodo de apertura de la caja
+        $totalVentas = $ventas->sum('total');
 
-        return view('caja.edit', compact('caja'));
-    }
+        // Contar ventas por método de pago y sumar totales
+        $ventasEfectivo = $ventas->where('metodo_pago_id', 1)->count(); // Asumiendo que 1 es ID de Efectivo
+        $totalEfectivo = $ventas->where('metodo_pago_id', 1)->sum('total');
+        $ventasTarjeta = $ventas->where('metodo_pago_id', 2)->count(); // Asumiendo que 2 es ID de Tarjeta
+        $totalTarjeta = $ventas->where('metodo_pago_id', 2)->sum('total');
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(CajaRequest $request, Caja $caja): RedirectResponse
-    {
-        $caja->update($request->validated());
-
-        return Redirect::route('cajas.index')
-            ->with('success', 'Caja updated successfully');
-    }
-
-    public function destroy($id): RedirectResponse
-    {
-        Caja::find($id)->delete();
-
-        return Redirect::route('cajas.index')
-            ->with('success', 'Caja deleted successfully');
+        return view('cajas.show', compact('caja', 'ventas', 'totalVentas', 'ventasEfectivo', 'totalEfectivo', 'ventasTarjeta', 'totalTarjeta'));
     }
 }

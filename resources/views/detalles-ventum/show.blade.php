@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('adminlte::page')
 
 @section('template_title')
     {{ $detallesVentum->name ?? __('Show') . " " . __('Detalles Ventum') }}

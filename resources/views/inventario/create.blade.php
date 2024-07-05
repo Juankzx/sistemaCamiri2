@@ -1,8 +1,16 @@
-@extends('layouts.app')
+@extends('adminlte::page')
 
 @section('template_title')
     {{ __('Create') }} Inventario
 @endsection
+
+@if(session('error'))
+        <script>
+            window.onload = function() {
+                alert('{{ session('error') }}');
+            };
+        </script>
+    @endif
 
 @section('content')
     <section class="content container-fluid">

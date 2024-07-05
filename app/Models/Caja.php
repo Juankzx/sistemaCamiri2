@@ -34,23 +34,28 @@ class Caja extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['sucursal_id', 'user_id', 'fecha_apertura', 'fecha_cierre', 'monto_apertura', 'monto_cierre', 'estado'];
+    protected $fillable = [
+        'sucursal_id', 
+        'user_id', 
+        'fecha_apertura', 
+        'fecha_cierre', 
+        'monto_apertura', 
+        'monto_cierre', 
+        'estado'
+    ];
 
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function sucursale()
+    public function sucursal()
     {
-        return $this->belongsTo(\App\Models\Sucursale::class, 'sucursal_id', 'id');
+        return $this->belongsTo(Sucursale::class);
     }
-    
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
+
     public function user()
     {
-        return $this->belongsTo(\App\Models\User::class, 'user_id', 'id');
+        return $this->belongsTo(User::class);
     }
     
     /**
@@ -58,7 +63,7 @@ class Caja extends Model
      */
     public function ventas()
     {
-        return $this->hasMany(\App\Models\Venta::class, 'id', 'caja_id');
+        return $this->hasMany(\App\Models\Venta::class, 'caja_id');
     }
     
 }

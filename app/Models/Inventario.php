@@ -4,21 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * Class Inventario
- *
- * @property $id
- * @property $producto_id
- * @property $cantidad
- * @property $tipo_movimiento
- * @property $fecha
- * @property $created_at
- * @property $updated_at
- *
- * @property Producto $producto
- * @package App
- * @mixin \Illuminate\Database\Eloquent\Builder
- */
 class Inventario extends Model
 {
     
@@ -29,7 +14,7 @@ class Inventario extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['producto_id', 'cantidad', 'tipo_movimiento', 'fecha'];
+    protected $fillable = ['producto_id', 'sucursal_id', 'bodega_id', 'cantidad'];
 
 
     /**
@@ -38,6 +23,19 @@ class Inventario extends Model
     public function producto()
     {
         return $this->belongsTo(\App\Models\Producto::class, 'producto_id', 'id');
+    }
+    
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function sucursal()
+    {
+        return $this->belongsTo(\App\Models\Sucursale::class, 'sucursal_id', 'id');
+    }
+
+    public function bodega()
+    {
+        return $this->belongsTo(\App\Models\Bodega::class, 'bodega_id', 'id');
     }
     
 }

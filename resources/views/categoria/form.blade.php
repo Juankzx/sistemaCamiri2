@@ -12,10 +12,14 @@
             {!! $errors->first('descripcion', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
         </div>
         <div class="form-group mb-2 mb20">
-            <label for="estado" class="form-label">{{ __('Estado') }}</label>
-            <input type="text" name="estado" class="form-control @error('estado') is-invalid @enderror" value="{{ old('estado', $categoria?->estado) }}" id="estado" placeholder="Estado">
-            {!! $errors->first('estado', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
-        </div>
+                <label for="estado" class="form-label">{{ __('Estado') }}</label>
+                <select name="estado" class="form-control @error('estado') is-invalid @enderror" id="estado">
+                <option value="0" {{ old('estado') == 0 ? 'selected' : '' }}>Inactivo</option>    
+                <option value="1" {{ old('estado') == 1 ? 'selected' : '' }}>Activo</option>
+                    
+                </select>
+                {!! $errors->first('estado', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
+            </div>
 
     </div>
     <div class="col-md-12 mt20 mt-2">

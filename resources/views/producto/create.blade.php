@@ -1,7 +1,7 @@
-@extends('layouts.app')
+@extends('adminlte::page')
 
 @section('template_title')
-    {{ __('Create') }} Producto
+    {{ __('Agregar ') }} Producto
 @endsection
 
 @section('content')
@@ -11,7 +11,7 @@
 
                 <div class="card card-default">
                     <div class="card-header">
-                        <span class="card-title">{{ __('Create') }} Producto</span>
+                        <span class="card-title">{{ __('Agregar Producto') }} Producto</span>
                     </div>
                     <div class="card-body bg-white">
                         <form method="POST" action="{{ route('productos.store') }}"  role="form" enctype="multipart/form-data">

@@ -35,8 +35,17 @@ class Venta extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['user_id', 'sucursal_id', 'metodo_pago_id', 'caja_id', 'fecha', 'total'];
+    protected $fillable = [
+        'user_id', 
+        'sucursal_id', 
+        'metodo_pago_id', 
+        'fecha', 
+        'total'];
 
+
+    protected $dates = [
+        'fecha',
+    ];
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -49,7 +58,7 @@ class Venta extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function metodosPago()
+    public function metodo_pago()
     {
         return $this->belongsTo(\App\Models\MetodosPago::class, 'metodo_pago_id', 'id');
     }
@@ -57,7 +66,7 @@ class Venta extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function sucursale()
+    public function sucursal()
     {
         return $this->belongsTo(\App\Models\Sucursale::class, 'sucursal_id', 'id');
     }
@@ -73,9 +82,21 @@ class Venta extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function detallesVentas()
+    public function detallesVenta()
     {
-        return $this->hasMany(\App\Models\DetallesVentum::class, 'id', 'venta_id');
+        return $this->hasMany(\App\Models\DetallesVentum::class, 'venta_id', 'id');
+    }
+
+    public function inventarios()
+    {
+        return $this->hasManyThrough(
+            Inventario::class,
+            DetallesVentum::class,
+            'venta_id',   // Clave foránea en la tabla DetallesVentum
+            'id',         // Clave foránea en la tabla Inventario
+            'id',         // Clave local en la tabla Ventas
+            'inventario_id'  // Clave local en la tabla DetallesVentum
+        );
     }
     
 }
