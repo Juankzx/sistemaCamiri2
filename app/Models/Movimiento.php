@@ -12,6 +12,7 @@ class Movimiento extends Model
     protected $fillable = [
         'producto_id',
         'sucursal_id',
+        'bodega_id',
         'tipo',
         'cantidad',
         'fecha',
@@ -26,6 +27,10 @@ class Movimiento extends Model
     public function sucursal()
     {
         return $this->belongsTo(Sucursale::class);
+    }
+    public function bodega()
+    {
+        return $this->belongsTo(Bodega::class);
     }
     public function user()
     {

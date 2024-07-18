@@ -22,7 +22,8 @@ class Inventario extends Model
      */
     public function producto()
     {
-        return $this->belongsTo(\App\Models\Producto::class, 'producto_id', 'id');
+        //return $this->belongsTo(\App\Models\Producto::class, 'producto_id', 'id');
+        return $this->belongsTo(Producto::class);
     }
     
     /**
@@ -30,12 +31,15 @@ class Inventario extends Model
      */
     public function sucursal()
     {
-        return $this->belongsTo(\App\Models\Sucursale::class, 'sucursal_id', 'id');
+        //return $this->belongsTo(\App\Models\Sucursale::class, 'sucursal_id', 'id');
+        return $this->belongsTo(Sucursale::class);
     }
 
     public function bodega()
     {
-        return $this->belongsTo(\App\Models\Bodega::class, 'bodega_id', 'id');
+        //return $this->belongsTo(\App\Models\Bodega::class, 'bodega_id', 'id');
+        return $this->belongsTo(Bodega::class);
     }
+    
     
 }

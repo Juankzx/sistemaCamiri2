@@ -1,114 +1,241 @@
 @extends('adminlte::page')
 
-@section('title', 'Dashboard')
+@section('title', 'Inicio')
 
 @section('content_header')
-    <h1>Dashboard</h1>
-@endsection
+    <h1>Inicio</h1>
+@stop
 
 @section('content')
-    <!-- Accesos rápidos -->
-    <div class="row">
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-info">
-                <div class="inner">
-                    <h3 id="ventas">0</h3>
-                    <p>Ventas</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-shopping-cart"></i>
-                </div>
-                <a href="ventas" class="small-box-footer">Más información <i class="fas fa-arrow-circle-right"></i></a>
+<div class="row">
+    <!-- Tarjeta de información -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>150</h3>
+                <p>New Orders</p>
             </div>
-        </div>
-        <!-- ./col -->
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-success">
-                <div class="inner">
-                    <h3 id="cajas">0</h3>
-                    <p>Cajas</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-box"></i>
-                </div>
-                <a href="cajas" class="small-box-footer">Más información <i class="fas fa-arrow-circle-right"></i></a>
+            <div class="icon">
+                <i class="fas fa-shopping-cart"></i>
             </div>
+            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
         </div>
-        <!-- ./col -->
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-warning">
-                <div class="inner">
-                    <h3 id="productos">0</h3>
-                    <p>Productos</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-tags"></i>
-                </div>
-                <a href="productos" class="small-box-footer">Más información <i class="fas fa-arrow-circle-right"></i></a>
-            </div>
-        </div>
-        <!-- ./col -->
     </div>
-    <!-- /.row -->
 
-    <!-- Gráfico de ventas mensuales -->
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Ventas Mensuales</h3>
+    <!-- Tarjeta de información -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>53<sup style="font-size: 20px">%</sup></h3>
+                <p>Bounce Rate</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+
+    <!-- Tarjeta de información -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>44</h3>
+                <p>User Registrations</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+
+    <!-- Tarjeta de información -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h3>65</h3>
+                <p>Unique Visitors</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-chart-pie"></i>
+            </div>
+            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <!-- Line chart -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Sales Report</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-tool" data-card-widget="remove">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <div class="card-body">
-                    <canvas id="salesChart"></canvas>
-                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="salesChart" style="height: 250px;"></canvas>
             </div>
         </div>
     </div>
-@endsection
+
+    <div class="col-lg-6">
+        <!-- Pie chart -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">User Demographics</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-tool" data-card-widget="remove">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="userDemographicsChart" style="height: 250px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <!-- Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Latest Orders</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-tool" data-card-widget="remove">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Item</th>
+                            <th>Status</th>
+                            <th>Popularity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>183</td>
+                            <td>Call of Duty</td>
+                            <td><span class="badge bg-success">Shipped</span></td>
+                            <td>
+                                <div class="progress progress-xs">
+                                    <div class="progress-bar bg-success" style="width: 80%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>219</td>
+                            <td>Xbox One</td>
+                            <td><span class="badge bg-warning">Pending</span></td>
+                            <td>
+                                <div class="progress progress-xs">
+                                    <div class="progress-bar bg-warning" style="width: 50%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>657</td>
+                            <td>PlayStation 4</td>
+                            <td><span class="badge bg-danger">Delivered</span></td>
+                            <td>
+                                <div class="progress progress-xs">
+                                    <div class="progress-bar bg-danger" style="width: 70%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>175</td>
+                            <td>MacBook Pro</td>
+                            <td><span class="badge bg-info">Processing</span></td>
+                            <td>
+                                <div class="progress progress-xs">
+                                    <div class="progress-bar bg-info" style="width: 60%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>134</td>
+                            <td>Samsung Galaxy</td>
+                            <td><span class="badge bg-success">Shipped</span></td>
+                            <td>
+                                <div class="progress progress-xs">
+                                    <div class="progress-bar bg-success" style="width: 70%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+@stop
 
 @section('js')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Simulación de datos, en un caso real estos datos vendrían de una API
-            const data = {
-                ventas: 150,
-                cajas: 75,
-                productos: 300
-            };
-
-            // Función para actualizar los datos en el dashboard
-            function actualizarDatos() {
-                document.getElementById('ventas').innerText = data.ventas;
-                document.getElementById('cajas').innerText = data.cajas;
-                document.getElementById('productos').innerText = data.productos;
-            }
-
-            // Actualizar los datos al cargar la página
-            actualizarDatos();
-
-            // Gráfico de ventas mensuales
-            var ctx = document.getElementById('salesChart').getContext('2d');
-            var salesChart = new Chart(ctx, {
-                type: 'bar', // Tipo de gráfico: 'bar', 'line', 'pie', etc.
-                data: {
-                    labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio'], // Etiquetas
-                    datasets: [{
-                        label: 'Ventas',
-                        data: [10, 20, 30, 40, 50, 60, 70], // Datos de ejemplo
-                        backgroundColor: 'rgba(60,141,188,0.9)', // Color de fondo de las barras
-                        borderColor: 'rgba(60,141,188,0.8)', // Color del borde de las barras
-                        borderWidth: 1 // Ancho del borde de las barras
-                    }]
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Line chart
+    var ctx = document.getElementById('salesChart').getContext('2d');
+    var salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+            datasets: [{
+                label: 'Sales',
+                data: [65, 59, 80, 81, 56, 55, 40],
+                backgroundColor: 'rgba(60,141,188,0.2)',
+                borderColor: 'rgba(60,141,188,1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    beginAtZero: true
                 },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true // El eje y comienza en 0
-                        }
-                    }
+                y: {
+                    beginAtZero: true
                 }
-            });
-        });
-    </script>
-@endsection
+            }
+        }
+    });
+
+    // Pie chart
+    var ctx2 = document.getElementById('userDemographicsChart').getContext('2d');
+    var userDemographicsChart = new Chart(ctx2, {
+        type: 'pie',
+        data: {
+            labels: ['Male', 'Female', 'Other'],
+            datasets: [{
+                label: 'User Demographics',
+                data: [45, 35, 20],
+                backgroundColor: ['#f56954', '#00a65a', '#f39c12'],
+            }]
+        },
+        options: {
+            responsive: true,
+        }
+    });
+</script>
+@stop

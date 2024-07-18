@@ -18,12 +18,13 @@
                         <td>{{ $bodega->id }}</td>
                         <td>{{ $bodega->nombre }}</td>
                         <td>
-                            <a href="{{ route('bodegas.edit', $bodega->id) }}" class="btn btn-warning">Editar</a>
-                            <a class="btn btn-sm btn-primary " href="{{ route('bodegas.show', $bodega->id) }}"><i class="fa fa-fw fa-eye"></i></a>
+                        <a class="btn btn-sm btn-primary " href="{{ route('bodegas.show', $bodega->id) }}"><i class="fa fa-fw fa-eye"></i></a>    
+                        <a href="{{ route('bodegas.edit', $bodega->id) }}" class="btn btn-sm btn-success"><i class="fa fa-fw fa-edit"></i></a>
+                            
                             <form action="{{ route('bodegas.destroy', $bodega->id) }}" method="POST" style="display:inline-block;">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                                <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-fw fa-trash"></i></button>
                             </form>
                         </td>
                     </tr>

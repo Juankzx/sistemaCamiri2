@@ -1,6 +1,6 @@
 <div class="form-group">
     <label for="numero_orden">Número de Orden</label>
-    <input type="text" class="form-control" id="numero_orden" name="numero_orden" required>
+    <input type="text" class="form-control" id="numero_orden" name="numero_orden" value="{{ $nuevoNumeroOrden }}" readonly>
 </div>
 <div class="form-group">
     <label for="proveedor_id">Proveedor</label>
@@ -13,9 +13,5 @@
 </div>
 <div class="form-group">
     <label for="estado">Estado</label>
-    <select class="form-control" id="estado" name="estado">
-        <option value="solicitado">Solicitado</option>
-        <option value="entregado">Entregado</option>
-        <option value="cancelado">Cancelado</option>
-    </select>
+    <input type="text" class="form-control" id="estado" name="estado" value="solicitado" readonly>
 </div>

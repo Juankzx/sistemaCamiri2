@@ -11,31 +11,68 @@ class OrdenCompra extends Model
 
     protected $table = 'ordenes_compras';
     protected $fillable = [
-        'proveedor_id', 'numero_orden', 'estado'
+        'proveedor_id', 
+        'numero_orden', 
+        'total', 
+        'estado'
     ];
+
+    public function proveedor()
+    {
+        return $this->belongsTo(Proveedore::class);
+    }
 
     public function detalles()
     {
-        return $this->hasMany(DetalleOrdenCompra::class, 'orden_compra_id');
+        return $this->hasMany(DetalleOrdenCompra::class);
     }
+
     public function producto()
-{
-    return $this->hasManyThrough(
-        Producto::class,
-        DetalleOrdenCompra::class,
-        'orden_compra_id', // Foreign key on DetalleOrdenCompra table
-        'id', // Foreign key on Producto table
-        'id', // Local key on OrdenCompra table
-        'producto_id' // Local key on DetalleOrdenCompra table
-    );
-}
+    {
+        return $this->hasManyThrough(
+            Producto::class,
+            DetalleOrdenCompra::class,
+            'orden_compra_id', // Foreign key on DetalleOrdenCompra table
+            'id', // Foreign key on Producto table
+            'id', // Local key on OrdenCompra table
+            'producto_id' // Local key on DetalleOrdenCompra table
+        );
+    }
 
     public function guiasDespacho()
     {
         return $this->hasMany(GuiaDespacho::class);
     }
-    public function proveedor()
-{
-    return $this->belongsTo(\App\Models\Proveedore::class, 'proveedor_id');
-}
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updated(function ($ordenCompra) {
+            if ($ordenCompra->isDirty('estado')) {
+                $guiaDespacho = $ordenCompra->guiaDespacho;
+                if ($guiaDespacho) {
+                    $guiaDespacho->update(['estado' => $ordenCompra->estado]);
+                }
+
+                if ($ordenCompra->estado == 'entregado') {
+                    foreach ($ordenCompra->detalles as $detalle) {
+                        // Lógica para agregar al inventario de la bodega general
+                        $inventario = Inventario::where('producto_id', $detalle->producto_id)->where('bodega_id', '1')->first(); // Asumiendo '1' es el ID de bodega general
+                        if ($inventario) {
+                            $inventario->cantidad += $detalle->cantidad;
+                            $inventario->save();
+                        } else {
+                            Inventario::create([
+                                'producto_id' => $detalle->producto_id,
+                                'bodega_id' => 1, // ID de bodega general
+                                'cantidad' => $detalle->cantidad,
+                            ]);
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
 }

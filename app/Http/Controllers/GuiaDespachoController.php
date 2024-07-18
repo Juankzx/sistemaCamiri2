@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\GuiaDespacho;
 use App\Models\OrdenCompra;
+use App\Models\Producto;
+use App\Models\MetodosPago;
 use Illuminate\Http\Request;
 
 class GuiaDespachoController extends Controller
@@ -11,36 +13,39 @@ class GuiaDespachoController extends Controller
     public function index()
     {
         $guias = GuiaDespacho::all();
-        $ordenCompra = OrdenCompra::all();
+        $ordenCompra = OrdenCompra::where('estado', 'solicitado')->get();
         return view('guias-despacho.index', compact('guias', 'ordenCompra'));
     }
 
     public function create()
     {
         $ordenCompra = OrdenCompra::all();
-        return view('guias-despacho.create', compact('ordenCompra'));
+        $productos = Producto::all();
+        return view('guias-despacho.create', compact('ordenCompra', 'productos'));
     }
 
     public function store(Request $request)
-{
-    $request->validate([
-        'numero_guia' => 'required|string|unique:guias_despacho,numero_guia',
-        'fecha_entrega' => 'required|date',
-        'orden_compra_id' => 'required|exists:ordenes_compras,id',
-        'estado' => 'required|in:emitida,en_transito,entregada',
-    ]);
-
-    try {
-        GuiaDespacho::create($request->all());
-        return redirect()->route('guias-despacho.index')->with('success', 'Guía de despacho creada con éxito.');
-    } catch (\Illuminate\Database\QueryException $e) {
-        // Aquí puedes verificar el código de error y personalizar el mensaje si es necesario
-        return redirect()->back()->withErrors('Número de guía duplicado, por favor ingresa un número diferente.')->withInput();
-    }
-}
-
-    public function show(GuiaDespacho $guia)
     {
+        $validatedData = $request->validate([
+            'numero_guia' => 'required|string|max:255',
+            'fecha_entrega' => 'required|date',
+            'orden_compra_id' => 'required|exists:ordenes_compras,id',
+            // 'estado' => 'required|string|max:255', // Ya no es necesario validar esto
+        ]);
+    
+        GuiaDespacho::create([
+            'numero_guia' => $validatedData['numero_guia'],
+            'fecha_entrega' => $validatedData['fecha_entrega'],
+            'orden_compra_id' => $validatedData['orden_compra_id'],
+            'estado' => 'emitida', // Establecer el estado inicial
+        ]);
+    
+        return redirect()->route('guias-despacho.index')->with('success', 'Guía de despacho creada con éxito.');
+    }
+
+    public function show($id)
+    {
+        $guia = GuiaDespacho::with('ordenCompra.proveedor', 'ordenCompra.detalles.producto')->findOrFail($id);
         return view('guias-despacho.show', compact('guia'));
     }
 
@@ -59,5 +64,23 @@ class GuiaDespachoController extends Controller
     {
         $guia->delete();
         return redirect()->route('guias-despacho.index')->with('success', 'Guía de despacho eliminada con éxito.');
+    }
+    
+    public function getOrdenCompraDetails($id)
+    {
+        $ordenCompra = OrdenCompra::with('detalles.producto')->findOrFail($id);
+        return response()->json($ordenCompra);
+    }
+
+    public function getDetalles($id)
+    {
+        $guiaDespacho = GuiaDespacho::with('ordenCompra.detalles.producto', 'ordenCompra.proveedor')->findOrFail($id);
+        $detalles = $guiaDespacho->ordenCompra->detalles;
+        $proveedor = $guiaDespacho->ordenCompra->proveedor;
+
+        return response()->json([
+            'detalles' => $detalles,
+            'proveedor' => $proveedor
+        ]);
     }
 }

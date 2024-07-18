@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('proveedor_id');
             $table->string('numero_orden')->unique();
             $table->enum('estado', ['solicitado', 'entregado', 'cancelado'])->default('solicitado');
+            $table->integer('total');
             $table->timestamps();
 
             $table->foreign('proveedor_id')->references('id')->on('proveedores');

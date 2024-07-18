@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'Sistema Camiri',
+    'title' => 'Sistema Administrativo Minimarket',
     'title_prefix' => '',
     'title_postfix' => '',
 
@@ -333,21 +333,25 @@ return [
         ],
         [
             'text' => 'Compras',
-            
+            'icon' => 'fa solid fa-cart-plus',
             'submenu' => [
                 [
+                    'icon' => 'fa solid fa-cart-plus',
                     'text' => 'Orden de Compras',
                     'url' => 'ordenes-compras',
                 ],
                 [
+                    'icon' => 'fa solid fa-cart-plus',
                     'text' => 'Guias de Despacho',
                     'url' => 'guias-despacho',
                 ],
                 [
+                    'icon' => 'fa solid fa-cart-plus',
                     'text' => 'Facturas',
                     'url' => 'facturas',
                 ],
                 [
+                    'icon' => 'fa solid fa-cart-plus',
                     'text' => 'Pagos',
                     'url' => 'pagos',
                 ],
@@ -355,25 +359,30 @@ return [
         ],
         [
             'text' => 'Inventario',
-            
+            'icon' => 'fa solid fa-warehouse',
             'submenu' => [
                 [
+                    'icon' => 'fa solid fa-warehouse',
                     'text' => 'Movimientos Inventario',
                     'url' => 'movimientos',
                 ],
                 [
+                    'icon' => 'fa solid fa-warehouse',
                     'text' => 'Inventarios',
                     'url' => 'inventarios',
                 ],
                 [
+                    'icon' => 'fa solid fa-warehouse',
                     'text' => 'Productos',
                     'url' => 'productos',
                 ],
                 [
+                    'icon' => 'fa solid fa-warehouse',
                     'text' => 'Bodegas',
                     'url' => 'bodegas',
                 ],
                 [
+                    'icon' => 'fa solid fa-warehouse',
                     'text' => 'Categorias',
                     'url' => 'categorias',
                 ],
@@ -386,18 +395,22 @@ return [
                 
                 
                 [
+                    'icon' => 'fa fa-cog',
                     'text' => 'Metodos de Pago',
                     'url' => 'metodos-pagos',
                 ],
                 [
+                    'icon' => 'fa fa-cog',
                     'text' => 'Proveedores',
                     'url' => 'proveedores',
                 ],
                 [
+                    'icon' => 'fa fa-cog',
                     'text' => 'Sucursales',
                     'url' => 'sucursales',
                 ],
                 [
+                    'icon' => 'fa fa-cog',
                     'text' => 'Unidad de Medida',
                     'url' => 'unidades',
                 ],

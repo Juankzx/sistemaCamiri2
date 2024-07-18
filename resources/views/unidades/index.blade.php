@@ -22,12 +22,12 @@
                         <td>{{ $unidad->abreviatura }}</td>
                         
                         <td>
-                            <a href="{{ route('unidades.show', $unidad) }}" class="btn btn-info">Ver</a>
-                            <a href="{{ route('unidades.edit', $unidad) }}" class="btn btn-warning">Editar</a>
+                            <a href="{{ route('unidades.show', $unidad) }}" class="btn btn-sm btn-primary"><i class="fa fa-fw fa-eye"></i></a>
+                            <a href="{{ route('unidades.edit', $unidad) }}" class="btn btn-sm btn-success"><i class="fa fa-fw fa-edit"></i></a>
                             <form action="{{ route('unidades.destroy', $unidad) }}" method="POST" style="display:inline-block;">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                                <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-fw fa-trash"></i></button>
                             </form>
                         </td>
                     </tr>

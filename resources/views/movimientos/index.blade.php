@@ -26,6 +26,7 @@
                                         <th>No</th>
                                         <th>Producto</th>
                                         <th>Código Barra</th>
+                                        <th>Bodega</th>
                                         <th>Sucursal</th>
                                         <th>Tipo</th>
                                         <th>Cantidad</th>
@@ -39,7 +40,8 @@
                                             <td>{{ ++$i }}</td>
                                             <td>{{ $movimiento->producto->nombre }}</td>
                                             <td>{{ $movimiento->producto->codigo_barra }}</td>
-                                            <td>{{ $movimiento->sucursal->nombre }}</td>
+                                            <td>{{ $movimiento->bodega ? $movimiento->bodega->nombre : 'N/A' }}</td>
+                                            <td>{{ $movimiento->sucursal ? $movimiento->sucursal->nombre : 'N/A' }}</td>
                                             <td>{{ $movimiento->tipo }}</td>
                                             <td>{{ $movimiento->cantidad }}</td>
                                             <td>{{ $movimiento->fecha }}</td>

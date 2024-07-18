@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class GuiaDespacho extends Model
@@ -12,7 +13,12 @@ class GuiaDespacho extends Model
 
     public function ordenCompra()
     {
-        return $this->belongsTo(OrdenCompra::class);
+        return $this->belongsTo(OrdenCompra::class, 'orden_compra_id');
+    }
+
+    public function detalles()
+    {
+        return $this->hasMany(DetalleGuiaDespacho::class);
     }
 
     public function facturas()

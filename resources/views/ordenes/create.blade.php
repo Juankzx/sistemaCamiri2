@@ -19,37 +19,21 @@
                 @include('ordenes.partials.form')
             </div>
         </div>
-
-        <div class="card mt-3">
-            <div class="card-header">
-                <h3>Datos de la Guía de Despacho</h3>
-            </div>
-            <div class="card-body">
-                @include('guias-despacho.partials.form')
-            </div>
-        </div>
-
-        <div class="card mt-3">
-            <div class="card-header">
-                <h3>Datos de la Factura</h3>
-            </div>
-            <div class="card-body">
-                @include('facturas.partials.form')
-            </div>
-        </div>
-
         <div class="card mt-3">
             <div class="card-header">
                 <h4>Detalles de la Orden de Compra</h4>
             </div>
-            <div class="card-body" id="detallesOrdenCompra">
-                <button type="button" class="btn btn-secondary" onclick="addDetail()">Agregar Producto</button>
+            <div class="card-body">
+                <div id="detallesOrdenCompra">
+                    <!-- Contenedor para los detalles de la orden -->
+                </div>
+                <button type="button" class="btn btn-secondary mt-3" onclick="addDetail()">Agregar Producto</button>
             </div>
         </div>
 
         <div class="form-group mt-3">
-            <label for="total_factura">Total de Factura</label>
-            <input type="number" class="form-control" id="total_factura" name="total_factura" required readonly>
+            <label for="total_factura">Total</label>
+            <input type="number" class="form-control" id="total" name="total" required readonly>
         </div>
 
         <button type="submit" class="btn btn-primary mt-3">Guardar Todo</button>
@@ -57,7 +41,7 @@
 </div>
 
 <script>
-let totalFactura = 0;
+let total = 0;
 
 function addDetail() {
     const container = document.getElementById('detallesOrdenCompra');
@@ -65,57 +49,58 @@ function addDetail() {
     const html = `
         <div class="detail-group form-group" style="border-top: 1px solid #ccc; padding-top: 10px; margin-top: 10px;">
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label for="producto_id-${index}">Producto</label>
-                    <select class="form-control" id="producto_id-${index}" name="detalles[${index}][producto_id]" onchange="updateInventarioOptions(${index})">
+                    <select class="form-control" id="producto_id-${index}" name="detalles[${index}][producto_id]" onchange="checkProductoEnBodegaGeneral(${index})">
                         <option value="">Seleccione un producto</option>
                         @foreach($productos as $producto)
                             <option value="{{ $producto->id }}">{{ $producto->nombre }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label for="inventario_id-${index}">Inventario</label>
-                    <select class="form-control" id="inventario_id-${index}" name="detalles[${index}][inventario_id]">
-                        <option value="">Seleccione un inventario</option>
-                        @foreach($inventarios as $inventario)
-                            <option value="{{ $inventario->id }}">{{ $inventario->producto->nombre }} - {{ $inventario->sucursal->nombre }} - {{ $inventario->cantidad }} en stock - {{ $inventario->bodega->nombre }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
                     <label for="cantidad-${index}">Cantidad</label>
                     <input type="number" class="form-control" id="cantidad-${index}" name="detalles[${index}][cantidad]" required placeholder="Cantidad" oninput="calculateTotal()">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
                     <label for="precio_compra-${index}">Precio de Compra</label>
                     <input type="text" class="form-control" id="precio_compra-${index}" name="detalles[${index}][precio_compra]" required placeholder="Precio de Compra" oninput="calculateTotal()">
                 </div>
+                <div class="col-md-2">
+                    <label for="info-${index}">Info</label>
+                    <div id="info-${index}" class="form-control-plaintext"></div>
+                </div>
             </div>
-            <button type="button" class="btn btn-danger" style="margin-top: 5px;" onclick="removeDetail(this)">Eliminar</button>
+            <button type="button" class="btn btn-danger mt-2" onclick="removeDetail(this)">Eliminar</button>
         </div>
     `;
     container.insertAdjacentHTML('beforeend', html);
 }
 
-function updateInventarioOptions(index) {
+function checkProductoEnBodegaGeneral(index) {
     const productoId = document.getElementById(`producto_id-${index}`).value;
-    const inventarioSelect = document.getElementById(`inventario_id-${index}`);
-    fetch(`/api/inventarios/${productoId}`) // Asumiendo que tienes una ruta API que devuelve los inventarios por producto
+    fetch(`/api/check-producto-bodega-general/${productoId}`)
         .then(response => response.json())
         .then(data => {
-            inventarioSelect.innerHTML = data.map(inv => `<option value="${inv.id}">${inv.sucursal.nombre} - ${inv.cantidad} en stock</option>`).join('');
+            const infoElement = document.getElementById(`info-${index}`);
+            if (data.exists) {
+                infoElement.innerHTML = `En Bodega General: ${data.cantidad}`;
+                infoElement.style.color = 'green';
+            } else {
+                infoElement.innerHTML = 'No disponible en Bodega General';
+                infoElement.style.color = 'red';
+            }
         });
 }
 
 function calculateTotal() {
-    totalFactura = 0;
+    total = 0;
     document.querySelectorAll('.detail-group').forEach(group => {
         const cantidad = group.querySelector('[name$="[cantidad]"]').value;
         const precio = group.querySelector('[name$="[precio_compra]"]').value;
-        totalFactura += cantidad * precio;
+        total += cantidad * precio;
     });
-    document.getElementById('total_factura').value = totalFactura.toFixed(0);
+    document.getElementById('total').value = total.toFixed(0);
 }
 
 function removeDetail(element) {

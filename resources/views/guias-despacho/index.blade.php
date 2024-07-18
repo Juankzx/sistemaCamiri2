@@ -3,7 +3,7 @@
 @section('content')
 <div class="container">
     <h1>Guías de Despacho</h1>
-    <a href="{{ route('guias-despacho.create') }}" class="btn btn-primary">Crear Guía de Despacho</a>
+    <a href="{{ route('guias-despacho.create') }}" class="btn btn-primary">+ Recepcionar Guía de Despacho</a>
     <table class="table">
         <thead>
             <tr>
@@ -28,11 +28,13 @@
                             </span>
                         </td>
                 <td>
-                    <a href="{{ route('guias-despacho.edit', $guia) }}" class="btn btn-secondary">Editar</a>
+                    <a href="{{ route('guias-despacho.edit', $guia) }}" class="btn btn-sm btn-success"><i class="fa fa-fw fa-edit"></i></a>
+                    <a class="btn btn-sm btn-primary" href="{{ route('guias-despacho.show', $guia->id) }}"><i class="fa fa-fw fa-eye"></i></a>
                     <form action="{{ route('guias-despacho.destroy', $guia) }}" method="POST" style="display: inline-block;">
+                        
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-fw fa-trash"></i></button>
                     </form>
                 </td>
             </tr>

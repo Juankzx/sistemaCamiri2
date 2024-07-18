@@ -3,7 +3,7 @@
 @section('content')
 <div class="container">
     <h1>Facturas</h1>
-    <a href="{{ route('facturas.create') }}" class="btn btn-primary">Crear Factura</a>
+    <a href="{{ route('facturas.create') }}" class="btn btn-primary">+ Recepcionar Factura</a>
     <table class="table">
         <thead>
             <tr>
@@ -29,11 +29,12 @@
                             </span>
                         </td>
                 <td>
-                    <a href="{{ route('facturas.edit', $factura) }}" class="btn btn-secondary">Editar</a>
+                <a class="btn btn-sm btn-primary" href="{{ route('facturas.show', $factura->id) }}"><i class="fa fa-fw fa-eye"></i></a>    
+                <a href="{{ route('facturas.edit', $factura) }}" class="btn btn-sm btn-success"><i class="fa fa-fw fa-edit"></i></a>
                     <form action="{{ route('facturas.destroy', $factura) }}" method="POST" style="display: inline-block;">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-fw fa-trash"></i></button>
                     </form>
                 </td>
             </tr>
@@ -42,6 +43,7 @@
     </table>
 </div>
 @endsection
+
 @section('css')
 <style>
     .bg-danger { background-color: #dc3545; color: white; }

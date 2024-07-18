@@ -10,7 +10,9 @@
 <div class="container-fluid">
     <div class="row mb-2">
         <div class="col-sm-12">
-            <a href="{{ route('ordenes-compras.create') }}" class="btn btn-primary mb-2">Crear Orden de Compra</a>
+            <a href="{{ route('ordenes-compras.create') }}" class="btn btn-primary mb-2">
+                <i class="fas fa-plus"></i> Crear Orden de Compra
+            </a>
         </div>
     </div>
 
@@ -19,17 +21,16 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Número de Orden</th>
                         <th>Proveedor</th>
                         <th>Estado</th>
+                        <th>Total</th>
                         <th style="width: 30%;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($ordenes as $orden)
                     <tr>
-                        <td>{{ $orden->id }}</td>
                         <td>{{ $orden->numero_orden }}</td>
                         <td>{{ $orden->proveedor->nombre }} - {{ $orden->proveedor->rut }}</td>
                         <td class="text-center">
@@ -37,16 +38,26 @@
                                 {{ $orden->estado }}
                             </span>
                         </td>
+                        <td>${{ $orden->total }}</td>
                         <td>
-                            <a href="{{ route('ordenes-compras.edit', $orden) }}" class="btn btn-sm btn-secondary">Editar</a>
-                            <a class="btn btn-sm btn-primary" href="{{ route('ordenes-compras.show', $orden->id) }}">Ver</a>
+                            <a class="btn btn-sm btn-primary" href="{{ route('ordenes-compras.show', $orden->id) }}">
+                                <i class="fa fa-fw fa-eye"></i>
+                            </a>
+                            <a href="{{ route('ordenes-compras.edit', $orden) }}" class="btn btn-sm btn-info">
+                                <i class="fa fa-fw fa-edit"></i>
+                            </a>
                             @if($orden->estado == 'solicitado')
-                            <a href="{{ route('ordenes-compras.entregar', $orden->id) }}" class="btn btn-sm btn-success">Marcar como Entregado</a>
+                            <a href="{{ route('ordenes-compras.entregar', $orden->id) }}" class="btn btn-sm btn-success">
+                                <i class="fas fa-check"></i>
+                            </a>
                             @endif
                             <form action="{{ route('ordenes-compras.destroy', $orden) }}" method="POST" style="display: inline-block;">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="fa fa-fw fa-trash"></i>
+                                    
+                                </button>
                             </form>
                         </td>
                     </tr>
@@ -57,6 +68,7 @@
     </div>
 </div>
 @stop
+
 @section('css')
 <style>
     .bg-danger {

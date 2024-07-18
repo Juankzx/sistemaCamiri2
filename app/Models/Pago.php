@@ -10,10 +10,25 @@ class Pago extends Model
 
     public function factura()
     {
-        return $this->belongsTo(Factura::class, 'factura_id');
+        return $this->belongsTo(Factura::class);
     }
+
     public function metodoPago()
     {
         return $this->belongsTo(MetodosPago::class, 'metodo_pago_id');
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($pago) {
+            if ($pago->estado_pago == 'pagado') {
+                $factura = $pago->factura;
+                if ($factura->estado_pago == 'pendiente') {
+                    $factura->update(['estado_pago' => 'pagado']);
+                }
+            }
+        });
     }
 }

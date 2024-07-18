@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sucursale;
 use App\Models\UnidadMedida;
 use App\Models\Producto;
 use App\Models\Categoria;
@@ -85,47 +86,46 @@ class ProductoController extends Controller
         $categorias = Categoria::all();
         $proveedores = Proveedore::all();
         $sucursales = Sucursale::all();
+        $unidadMedida = UnidadMedida::all();
 
-        return view('producto.edit', compact('producto', 'categorias', 'proveedores', 'sucursales'));
+        return view('producto.edit', compact('producto', 'categorias', 'proveedores', 'sucursales', 'unidadMedida'));
     }
 
-    public function update(ProductoRequest $request, Producto $producto): RedirectResponse
-    {
-        $validated = $request->validate([
-            'codigo_barra' => 'required|string|max:255',
-            'nombre' => 'required|string|max:255',
-            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'preciocompra' => 'required|numeric',
-            'precioventa' => 'required|numeric',
-            'categoria_id' => 'required|exists:categorias,id',
-            'proveedor_id' => 'required|exists:proveedores,id',
+    public function update(Request $request, Producto $producto): RedirectResponse
+{
+    $validated = $request->validate([
+        'codigo_barra' => 'required|string|max:255',
+        'nombre' => 'required|string|max:255',
+        'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        'preciocompra' => 'required|numeric',
+        'precioventa' => 'required|numeric',
+        'categoria_id' => 'required|exists:categorias,id',
+        'proveedor_id' => 'required|exists:proveedores,id',
+    ]);
 
-        ]);
+    $producto->codigo_barra = $validated['codigo_barra'];
+    $producto->nombre = $validated['nombre'];
+    $producto->preciocompra = $validated['preciocompra']; // Corregido
+    $producto->precioventa = $validated['precioventa']; // Corregido
+    $producto->categoria_id = $validated['categoria_id'];
+    $producto->proveedor_id = $validated['proveedor_id'];
 
-        $producto->codigo_barra = $validated['codigo_barra'];
-        $producto->nombre = $validated['nombre'];
-        $producto->preciocompra = $validated['precioCompra'];
-        $producto->precioventa = $validated['precioVenta'];
-        $producto->categoria_id = $validated['categoria_id'];
-        $producto->proveedor_id = $validated['proveedor_id'];
-        
-
-        if ($request->hasFile('imagen')) {
-            // Eliminar imagen antigua
-            if ($producto->imagen) {
-                Storage::disk('public')->delete($producto->imagen);
-            }
-            // Guardar nueva imagen
-            $imagen_path = $request->file('imagen')->store('imagenes', 'public');
-            // Guardar en la base de datos
-            $producto->imagen = $imagen_path;
+    if ($request->hasFile('imagen')) {
+        // Eliminar imagen antigua
+        if ($producto->imagen) {
+            Storage::disk('public')->delete($producto->imagen);
         }
-
-        $producto->save();
-        
-        return redirect()->route('productos.index')->with('success', 'Éxito, su producto ha sido actualizado.');
-    
+        // Guardar nueva imagen
+        $imagen_path = $request->file('imagen')->store('imagenes', 'public');
+        // Guardar en la base de datos
+        $producto->imagen = $imagen_path;
     }
+
+    $producto->save();
+    
+    return redirect()->route('productos.index')->with('success', 'Éxito, su producto ha sido actualizado.');
+}
+
     public function destroy($id): RedirectResponse
     {
         Producto::find($id)->delete();
@@ -133,4 +133,26 @@ class ProductoController extends Controller
         return Redirect::route('productos.index')
             ->with('success', 'Producto deleted successfully');
     }
+
+    public function getProductos()
+{
+    $productos = Producto::all()->map(function ($producto) {
+        $producto->imagen_url = $producto->imagen ? asset('storage/imagenes/' . $producto->imagen) : asset('default_image_path'); // Asegúrate de tener una imagen por defecto
+        return $producto;
+    });
+
+    return response()->json($productos);
+}
+
+public function getProductosPorSucursal($sucursalId)
+    {
+        $productos = Producto::whereHas('inventarios', function($query) use ($sucursalId) {
+            $query->where('sucursal_id', $sucursalId);
+        })->with(['inventarios' => function($query) use ($sucursalId) {
+            $query->where('sucursal_id', $sucursalId);
+        }])->get();
+
+        return response()->json($productos);
+    }
+
 }

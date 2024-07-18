@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('categoria_id')->nullable();
             $table->unsignedBigInteger('proveedor_id')->nullable();
             $table->unsignedBigInteger('unidadmedida_id')->nullable();
-            $table->string('codigo_barra');
+            $table->string('codigo_barra')->unique();
             $table->string('nombre');
             $table->string('imagen')->nullable();
             $table->integer('preciocompra');

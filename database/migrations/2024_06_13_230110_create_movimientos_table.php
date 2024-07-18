@@ -14,10 +14,11 @@ return new class extends Migration
         Schema::create('movimientos', function (Blueprint $table) {
             $table->id();
             $table->foreignId('producto_id')->constrained('productos');
-            $table->foreignId('sucursal_id')->constrained('sucursales');
-            $table->enum('tipo', ['entrada', 'salida']);
+            $table->foreignId('sucursal_id')->nullable()->constrained('sucursales');
+            $table->foreignId('bodega_id')->nullable()->constrained('bodegas');
+            $table->enum('tipo', ['entrada', 'salida', 'transferencia', 'venta', 'compra', 'inicial']);
             $table->integer('cantidad');
-            $table->timestamp('fecha');
+            $table->timestamp('fecha')->useCurrent();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
