@@ -51,8 +51,20 @@
                     </div>
                     <div class="card-body">
                         <input type="text" id="productSearch" class="form-control mb-3" placeholder="Buscar producto por código o nombre...">
-                        <div id="productGrid" class="d-flex flex-wrap">
-                            <!-- Productos cargados aquí dinámicamente -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Precio</th>
+                                        <th>Cantidad</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productTable">
+                                    <!-- Productos cargados aquí dinámicamente -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -76,7 +88,7 @@
                 </div>
                 <div class="card-body">
                     <div class="form-group">
-                        <label>Total Neto:</label>
+                        <label>Total Bruto:</label>
                         <input type="text" id="totalNeto" class="form-control" readonly>
                     </div>
                     <div class="form-group">
@@ -84,7 +96,7 @@
                         <input type="text" id="iva" class="form-control" readonly>
                     </div>
                     <div class="form-group">
-                        <label>Total con IVA:</label>
+                        <label>Total Neto:</label>
                         <input type="text" id="totalConIva" class="form-control" readonly>
                     </div>
                     <button type="button" class="btn btn-primary btn-block" onclick="submitForm()">Finalizar Venta</button>
@@ -99,20 +111,18 @@ let products = @json($productos);
 let cart = [];
 
 function displayProducts(products) {
-    const grid = document.getElementById('productGrid');
-    grid.innerHTML = '';
+    const table = document.getElementById('productTable');
+    table.innerHTML = '';
     products.forEach(product => {
-        const productCard = `
-            <div class="card m-2" style="width: 10rem;">
-                <div class="card-body">
-                    <h5 class="card-title">${product.nombre}</h5>
-                    <p class="card-text">Precio: $${product.precioventa.toFixed(2)}</p>
-                    <p class="card-text">Cantidad: ${product.inventarios[0].cantidad}</p>
-                    <button type="button" onclick="addProductToCart(${product.id}, '${product.nombre}', ${product.precioventa}, ${product.inventarios[0].cantidad}, ${product.inventarios[0].id})" class="btn btn-primary">Agregar</button>
-                </div>
-            </div>
+        const productRow = `
+            <tr>
+                <td>${product.nombre}</td>
+                <td>$${product.precioventa.toFixed(0)}</td>
+                <td>${product.inventarios[0].cantidad}</td>
+                <td><button type="button" onclick="addProductToCart(${product.id}, '${product.nombre}', ${product.precioventa}, ${product.inventarios[0].cantidad}, ${product.inventarios[0].id})" class="btn btn-primary">Agregar</button></td>
+            </tr>
         `;
-        grid.innerHTML += productCard;
+        table.innerHTML += productRow;
     });
 }
 
@@ -146,7 +156,7 @@ function updateCartDisplay() {
                         <button class="btn btn-increment btn-outline-secondary" type="button" onclick="adjustQuantity(${item.id}, 1)">+</button>
                     </div>
                 </div>
-                <div>$${(item.quantity * item.price).toFixed(2)}</div>
+                <div>$${(item.quantity * item.price).toFixed(0)}</div>
                 <button type="button" class="btn btn-danger btn-sm" onclick="removeFromCart(${item.id})">x</button>
             </div>
         `;
@@ -179,9 +189,9 @@ function updateTotals() {
     const totalNeto = totalConIva / 1.19; // Calculando el total neto
     const iva = totalConIva - totalNeto; // Calculando el IVA
 
-    document.getElementById('totalNeto').value = `$${totalNeto.toFixed(2)}`;
-    document.getElementById('iva').value = `$${iva.toFixed(2)}`;
-    document.getElementById('totalConIva').value = `$${totalConIva.toFixed(2)}`;
+    document.getElementById('totalNeto').value = `$${totalNeto.toFixed(0)}`;
+    document.getElementById('iva').value = `$${iva.toFixed(0)}`;
+    document.getElementById('totalConIva').value = `$${totalConIva.toFixed(0)}`;
 }
 
 document.getElementById('productSearch').addEventListener('input', function(e) {

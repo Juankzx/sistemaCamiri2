@@ -1,4 +1,3 @@
-
 @extends('adminlte::page')
 
 @section('template_title')
@@ -37,12 +36,12 @@
                                 <tbody>
                                     @foreach ($movimientos as $movimiento)
                                         <tr>
-                                            <td>{{ ++$i }}</td>
+                                            <td>{{ $loop->iteration + $i }}</td>
                                             <td>{{ $movimiento->producto->nombre }}</td>
                                             <td>{{ $movimiento->producto->codigo_barra }}</td>
                                             <td>{{ $movimiento->bodega ? $movimiento->bodega->nombre : 'N/A' }}</td>
                                             <td>{{ $movimiento->sucursal ? $movimiento->sucursal->nombre : 'N/A' }}</td>
-                                            <td>{{ $movimiento->tipo }}</td>
+                                            <td>{{ ucfirst($movimiento->tipo) }}</td>
                                             <td>{{ $movimiento->cantidad }}</td>
                                             <td>{{ $movimiento->fecha }}</td>
                                             <td>{{ $movimiento->user->name }}</td>
@@ -53,8 +52,26 @@
                         </div>
                     </div>
                 </div>
-                {!! $movimientos->links() !!}
+                <div class="d-flex justify-content-center">
+                    {!! $movimientos->links() !!}
+                </div>
             </div>
         </div>
     </div>
+@endsection
+
+@section('css')
+    <style>
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .table th, .table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .table th {
+            background-color: #f8f9fa;
+        }
+    </style>
 @endsection

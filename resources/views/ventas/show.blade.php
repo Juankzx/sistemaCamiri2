@@ -29,39 +29,45 @@
                     <tr>
                         <th>Producto</th>
                         <th>Cantidad</th>
-                        <th>Precio Unitario</th>
-                        <th>SubTotal</th>
+                        <th>Precio Unitario (con IVA)</th>
+                        <th>SubTotal (con IVA)</th>
                         <th>Inventario (Sucursal)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @php $total = 0; @endphp
+                    @php
+                        $totalConIva = 0;
+                        $totalSinIva = 0;
+                    @endphp
                     @foreach($venta->detallesVenta as $detalle)
                     @php
-                        $subtotal = $detalle->cantidad * $detalle->precio_unitario;
-                        $total += $subtotal;
+                        $precioUnitarioSinIva = $detalle->precio_unitario / 1.19;
+                        $subtotalSinIva = $detalle->cantidad * $precioUnitarioSinIva;
+                        $subtotalConIva = $detalle->cantidad * $detalle->precio_unitario;
+                        $totalSinIva += $subtotalSinIva;
+                        $totalConIva += $subtotalConIva;
                     @endphp
                     <tr>
                         <td>{{ $detalle->producto->nombre }}</td>
                         <td>{{ $detalle->cantidad }}</td>
                         <td>${{ number_format($detalle->precio_unitario, 0) }}</td>
-                        <td>${{ number_format($subtotal, 0) }}</td>
+                        <td>${{ number_format($subtotalConIva, 0) }}</td>
                         <td>{{ $detalle->inventarios->sucursal->nombre }}</td>
                     </tr>
                     @endforeach
                     <tr>
-                        <th colspan="3">Total Neto</th>
-                        <th>${{ number_format($total, 0) }}</th>
+                        <th colspan="3">Total Bruto (sin IVA)</th>
+                        <th>${{ number_format($totalSinIva, 0) }}</th>
                         <th></th>
                     </tr>
                     <tr>
                         <th colspan="3">IVA (19%)</th>
-                        <th>${{ number_format($total * 0.19, 0) }}</th>
+                        <th>${{ number_format($totalSinIva * 0.19, 0) }}</th>
                         <th></th>
                     </tr>
                     <tr>
-                        <th colspan="3">Total con IVA</th>
-                        <th>${{ number_format($total * 1.19, 0) }}</th>
+                        <th colspan="3">Total Neto (con IVA)</th>
+                        <th>${{ number_format($totalConIva, 0) }}</th>
                         <th></th>
                     </tr>
                 </tbody>

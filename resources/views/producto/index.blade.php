@@ -38,7 +38,6 @@
 									<th >Codigo de Barras</th>
                                     <th >Nombre</th>
                                     <th >Unidad de Medida</th>
-                                    <th >Imagen</th>
 									<th >Precio Compra</th>
 									<th >Precio Venta</th>
                                     <th >Categoria</th>
@@ -57,11 +56,6 @@
                                             <td >{{ $producto->codigo_barra }}</td>
                                             <td >{{ $producto->nombre }}</td>
                                             <td >{{ $producto->unidadmedida->nombre }} - {{ $producto->unidadmedida->abreviatura }}</td>
-										<td >
-                                        @if($producto->imagen)
-                                            <img src="{{ Storage::url($producto->imagen) }}" alt="{{ $producto->nombre }}" width="75">
-                                        @endif
-                                        </td>
 										<td >{{ $producto->preciocompra }}</td>
 										<td >{{ $producto->precioventa }}</td>
                                         <td >{{ $producto->categoria->nombre ?? 'Sin categoria'}}</td>

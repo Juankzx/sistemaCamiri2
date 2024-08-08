@@ -25,7 +25,6 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Imagen</th>
                 <th>Producto</th>
                 <th>Bodega</th>
                 <th>Sucursal</th>
@@ -37,11 +36,6 @@
         <tbody>
             @foreach($inventarios as $inventario)
             <tr>
-                <td>
-                    @if($inventario->producto->imagen)
-                    <img src="{{ Storage::url($inventario->producto->imagen) }}" alt="{{ $inventario->producto->nombre }}" width="65">
-                    @endif
-                </td>
                 <td>{{ $inventario->producto->nombre }}</td>
                 <td>{{ $inventario->bodega ? $inventario->bodega->nombre : 'N/A' }}</td>
                 <td>{{ $inventario->sucursal ? $inventario->sucursal->nombre : 'N/A' }}</td>

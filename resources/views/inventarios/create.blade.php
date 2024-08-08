@@ -18,12 +18,11 @@
     <form action="{{ route('inventarios.store') }}" method="POST">
         @csrf
         <div class="form-group">
-            <label for="productoSearch">Buscar Producto</label>
-            <input type="text" class="form-control mb-3" id="productoSearch" placeholder="Buscar por nombre, categoría o código de barras...">
+            <label for="producto_id">Producto</label>
             <select class="form-control" id="producto_id" name="producto_id" required>
                 <option value="" disabled selected>Seleccione un Producto</option>    
                 @foreach($productos as $producto)
-                    <option value="{{ $producto->id }}" data-nombre="{{ $producto->nombre }}" data-categoria="{{ $producto->categoria->nombre ?? '' }}" data-codigo="{{ $producto->codigo_barra }}">
+                    <option value="{{ $producto->id }}">
                         {{ $producto->nombre }} - {{ $producto->categoria->nombre ?? 'Sin categoría' }} - {{ $producto->codigo_barra }}
                     </option>
                 @endforeach
@@ -45,35 +44,6 @@
         <button type="submit" class="btn btn-primary">Guardar</button>
     </form>
 </div>
-
-<script>
-document.getElementById('productoSearch').addEventListener('input', function() {
-    const searchText = this.value.toLowerCase();
-    const options = document.querySelectorAll('#producto_id option');
-
-    let foundMatch = false;
-
-    options.forEach(option => {
-        const nombre = option.getAttribute('data-nombre').toLowerCase();
-        const categoria = option.getAttribute('data-categoria').toLowerCase();
-        const codigo = option.getAttribute('data-codigo').toLowerCase();
-
-        if (nombre.includes(searchText) || categoria.includes(searchText) || codigo.includes(searchText)) {
-            option.style.display = '';
-            if (!foundMatch) {
-                option.selected = true;
-                foundMatch = true;
-            }
-        } else {
-            option.style.display = 'none';
-        }
-    });
-
-    if (!foundMatch) {
-        document.querySelector('#producto_id').selectedIndex = 0;
-    }
-});
-</script>
 @endsection
 
 @section('css')

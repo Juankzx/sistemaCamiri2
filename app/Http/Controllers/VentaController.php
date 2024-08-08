@@ -89,7 +89,7 @@ public function create()
             Movimiento::create([
                 'producto_id' => $producto->id,
                 'sucursal_id' => $validatedData['sucursal_id'],
-                'tipo' => 'salida',
+                'tipo' => 'venta',
                 'cantidad' => $detalleData['cantidad'],
                 'fecha' => now(),
                 'user_id' => $validatedData['user_id']

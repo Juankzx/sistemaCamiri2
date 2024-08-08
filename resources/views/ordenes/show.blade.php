@@ -31,8 +31,8 @@
                     <tr>
                         <th>Producto</th>
                         <th>Cantidad</th>
+                        <th>Precio Bruto</th>
                         <th>Precio Neto</th>
-                        <th>Precio Compra (con IVA)</th>
                         <th>Subtotal</th>
                     </tr>
                 </thead>

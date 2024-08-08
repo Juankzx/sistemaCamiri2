@@ -141,7 +141,7 @@ public function checkProductoEnBodegaGeneral($productoId)
                         Movimiento::create([
                             'producto_id' => $detalle->producto_id,
                             'bodega_id' => $inventario->bodega_id,
-                            'tipo' => 'entrada',
+                            'tipo' => 'compra',
                             'cantidad' => $detalle->cantidad,
                             'fecha' => now(),
                             'user_id' => auth()->id() // Asumiendo que estás registrando quién hace la operación

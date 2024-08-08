@@ -2,22 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Movimiento extends Model
 {
-    use HasFactory;
-
-    protected $fillable = [
-        'producto_id',
-        'sucursal_id',
-        'bodega_id',
-        'tipo',
-        'cantidad',
-        'fecha',
-        'user_id'
-    ];
+    protected $fillable = ['producto_id', 'sucursal_id', 'bodega_id', 'tipo', 'cantidad', 'fecha', 'user_id'];
 
     public function producto()
     {
@@ -28,12 +17,14 @@ class Movimiento extends Model
     {
         return $this->belongsTo(Sucursale::class);
     }
+
     public function bodega()
     {
         return $this->belongsTo(Bodega::class);
     }
+
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class);
     }
 }
