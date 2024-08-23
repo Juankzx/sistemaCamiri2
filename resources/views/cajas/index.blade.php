@@ -17,6 +17,24 @@
                         <button class="btn btn-primary btn-sm float-right" data-toggle="modal" data-target="#abrirCajaModal">Abrir Nueva Caja</button>
                     @endif
                 </div>
+
+                <!-- Campos de búsqueda en vivo -->
+                <div class="row mb-3 p-2">
+                    <div class="col-md-4">
+                        <input type="text" id="searchSucursal" class="form-control" placeholder="Buscar por sucursal...">
+                    </div>
+                    <div class="col-md-4">
+                        <select id="searchEstado" class="form-control">
+                            <option value="">Buscar por estado</option>
+                            <option value="Abierta">Abierta</option>
+                            <option value="Cerrada">Cerrada</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="date" id="searchFecha" class="form-control" placeholder="Buscar por fecha...">
+                    </div>
+                </div>
+
                 <div class="card-body">
                     <table class="table table-bordered table-striped">
                         <thead>
@@ -32,7 +50,7 @@
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="cajasTableBody">
                             @forelse ($cajas as $caja)
                                 <tr>
                                     <td>{{ $caja->id }}</td>
@@ -40,8 +58,8 @@
                                     <td>{{ $caja->user->name }}</td>
                                     <td>{{ \Carbon\Carbon::parse($caja->fecha_apertura)->format('d/m/Y H:i:s') }}</td>
                                     <td>{{ $caja->fecha_cierre ? \Carbon\Carbon::parse($caja->fecha_cierre)->format('d/m/Y H:i:s') : 'N/A' }}</td>
-                                    <td>{{ number_format($caja->monto_apertura, 0) }}</td>
-                                    <td>{{ $caja->monto_cierre ? number_format($caja->monto_cierre, 0) : 'N/A' }}</td>
+                                    <td>$ {{ number_format($caja->monto_apertura, 0) }}</td>
+                                    <td>$ {{ $caja->monto_cierre ? number_format($caja->monto_cierre, 0) : 'N/A' }}</td>
                                     <td>{{ $caja->estado ? 'Abierta' : 'Cerrada' }}</td>
                                     <td>
                                         <a href="{{ route('cajas.show', $caja->id) }}" class="btn btn-xs btn-primary">Ver</a>
@@ -136,14 +154,98 @@
 @stop
 
 @section('js')
-    <script>
-        $('#cerrarCajaModal').on('show.bs.modal', function (event) {
-        var button = $(event.relatedTarget);
-        var id = button.data('id');
-        var monto = button.data('monto');
-        var modal = $(this);
-        modal.find('form').attr('action', '/cajas/cerrar/' + id);
-        modal.find('#monto_cierre').val(monto);
+<script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cajas = @json($cajas); // Obtenemos las cajas desde PHP
+
+        // Configuración de Fuse.js
+        const options = {
+            keys: ['sucursal.nombre', 'estado', 'fecha_apertura'], // Claves para búsqueda
+            threshold: 0.3 // Sensibilidad
+        };
+
+        const fuse = new Fuse(cajas.data, options);
+
+        // Mostrar todas las cajas inicialmente
+        displayCajas(cajas.data);
+
+        // Manejador para búsqueda por sucursal
+        document.getElementById('searchSucursal').addEventListener('input', function(e) {
+            filterCajas();
+        });
+
+        // Manejador para búsqueda por estado
+        document.getElementById('searchEstado').addEventListener('change', function(e) {
+            filterCajas();
+        });
+
+        // Manejador para búsqueda por fecha
+        document.getElementById('searchFecha').addEventListener('change', function(e) {
+            filterCajas();
+        });
+
+        // Función para filtrar las cajas
+        function filterCajas() {
+    const searchSucursal = document.getElementById('searchSucursal').value.trim();
+    const searchEstado = document.getElementById('searchEstado').value;
+    const searchFecha = document.getElementById('searchFecha').value;
+
+    let filteredCajas = cajas.data;
+
+    // Filtro por sucursal
+    if (searchSucursal !== '') {
+        const result = fuse.search(searchSucursal);
+        filteredCajas = result.map(r => r.item);
+    }
+
+    // Filtro por estado
+    if (searchEstado !== '') {
+        filteredCajas = filteredCajas.filter(caja => {
+            // Verificamos si el estado es booleano y lo convertimos a 'Abierta' o 'Cerrada'
+            const estadoActual = caja.estado ? 'Abierta' : 'Cerrada';
+            return estadoActual === searchEstado;
+        });
+    }
+
+    // Filtro por fecha de apertura
+    if (searchFecha !== '') {
+        filteredCajas = filteredCajas.filter(caja => caja.fecha_apertura.startsWith(searchFecha));
+    }
+
+    displayCajas(filteredCajas);
+}
+
+
+        // Función para mostrar las cajas
+        function displayCajas(filteredCajas) {
+            const tableBody = document.querySelector('#cajasTableBody');
+            tableBody.innerHTML = '';
+
+            if (filteredCajas.length > 0) {
+                filteredCajas.forEach(caja => {
+                    const row = `
+                        <tr>
+                            <td>${caja.id}</td>
+                            <td>${caja.sucursal.nombre}</td>
+                            <td>${caja.user.name}</td>
+                            <td>${new Date(caja.fecha_apertura).toLocaleString()}</td>
+                            <td>${caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : 'N/A'}</td>
+                            <td>$${caja.monto_apertura.toLocaleString()}</td>
+                            <td>${caja.monto_cierre ? `$${caja.monto_cierre.toLocaleString()}` : 'N/A'}</td>
+                            <td>${caja.estado ? 'Abierta' : 'Cerrada'}</td>
+                            <td>
+                                <a href="/cajas/${caja.id}" class="btn btn-xs btn-primary">Ver</a>
+                                ${caja.estado ? `<button class="btn btn-xs btn-danger" data-toggle="modal" data-target="#cerrarCajaModal" data-id="${caja.id}" data-monto="${caja.monto_apertura}">Cerrar</button>` : ''}
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="9" class="text-center">No se encontraron cajas.</td></tr>';
+            }
+        }
     });
-    </script>
+</script>
 @stop

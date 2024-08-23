@@ -13,19 +13,27 @@ use App\Http\Requests\ProductoRequest;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+
 
 class ProductoController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): View
-{
-    $productos = Producto::with(['categoria', 'proveedor', 'unidadMedida'])->paginate();
+    
+     public function index(Request $request)
+     {
+         $productos = Producto::with(['unidadmedida', 'categoria', 'proveedor'])
+                              ->paginate(10)
+                              ->withQueryString();
+     
+         return view('producto.index', compact('productos'))
+                ->with('i', (request()->input('page', 1) - 1) * 10);
+     }
+     
 
-        return view('producto.index', compact('productos'))
-            ->with('i', (request()->input('page', 1) - 1) * $productos->perPage());
-}
+
     /**
      * Show the form for creating a new resource.
      */
@@ -70,12 +78,22 @@ class ProductoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id): View
-    {
-        $producto = Producto::find($id);
+    public function show($id)
+{
+    Log::info('Intentando mostrar detalles del producto con ID:', ['id' => $id]);
 
-        return view('productos.show', compact('producto'));
+    try {
+        $producto = Producto::findOrFail($id);
+        Log::info('Producto encontrado:', ['producto' => $producto->toArray()]);
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        Log::error('Producto no encontrado con ID:', ['id' => $id]);
+        return redirect()->route('productos.index')->with('error', 'Producto no encontrado.');
     }
+
+    return view('producto.show', compact('producto'));
+}
+
+
 
     /**
      * Show the form for editing the specified resource.
@@ -154,5 +172,30 @@ public function getProductosPorSucursal($sucursalId)
 
         return response()->json($productos);
     }
+
+    public function search(Request $request)
+{
+    $search = $request->input('query');
+
+    // Verificar que se recibió la consulta de búsqueda
+    if (is_null($search) || $search === '') {
+        return response()->json([], 200);
+    }
+
+    // Filtrar productos por nombre o código de barras
+    $productos = Producto::with(['unidadmedida', 'categoria', 'proveedor'])
+                         ->where('nombre', 'like', "%$search%")
+                         ->orWhere('codigo_barra', 'like', "%$search%")
+                         ->paginate(10);
+
+    // Devolver los productos como JSON
+    return response()->json($productos->items());
+}
+
+
+
+
+
+        
 
 }

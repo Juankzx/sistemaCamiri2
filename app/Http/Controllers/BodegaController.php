@@ -50,15 +50,15 @@ class BodegaController extends Controller
         return redirect()->route('bodegas.index')->with('success', 'Bodega eliminada exitosamente.');
     }
     public function show($id)
-    {
-        // Obtener la bodega general
-        $bodegaGeneral = Bodega::findOrFail($id);
+{
+    $bodegaGeneral = Bodega::findOrFail($id);
+    $productos = Producto::whereHas('inventarios', function ($query) use ($id) {
+        $query->where('bodega_id', $id);
+    })->with(['inventarios' => function ($query) use ($id) {
+        $query->where('bodega_id', $id);
+    }])->get();
 
-        // Obtener todos los productos con sus cantidades totales en la bodega general
-        $productos = Producto::with(['inventarios' => function ($query) use ($bodegaGeneral) {
-            $query->where('bodega_id', $bodegaGeneral->id);
-        }])->get();
+    return view('bodegas.show', compact('bodegaGeneral', 'productos'));
+}
 
-        return view('bodegas.show', compact('bodegaGeneral', 'productos'));
-    }
 }

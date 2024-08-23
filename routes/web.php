@@ -37,6 +37,8 @@ Route::post('register', [RegisterController::class, 'register'])->middleware('gu
 // Rutas protegidas
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+
     Route::resource('productos', ProductoController::class);
     Route::resource('inventarios', InventarioController::class);
 });
@@ -97,6 +99,9 @@ Route::get('/ventas/{id}', [VentaController::class, 'show'])->name('ventas.show'
 Route::get('productos/sucursal/{id}', [App\Http\Controllers\VentaController::class, 'getProductosPorSucursal']);
 Route::get('productos/sucursal/{sucursalId}', [VentaController::class, 'productosPorSucursal']);
 Route::get('/productos/sucursal/{sucursal}', [ProductoController::class, 'getProductosPorSucursal']);
+// Ruta para buscar productos
+Route::get('/productos/search', [ProductoController::class, 'search'])->name('productos.search');
+
 
 
 
