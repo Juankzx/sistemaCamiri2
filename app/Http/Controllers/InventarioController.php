@@ -8,59 +8,87 @@ use App\Models\Producto;
 use App\Models\Sucursale;
 use App\Models\Bodega;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
-
 
 class InventarioController extends Controller
 {
     // Muestra el listado del inventario
     public function index(Request $request): View
-    {
-        $query = Inventario::with(['producto', 'sucursal', 'bodega']);
+{
+    $query = Inventario::with(['producto', 'sucursal', 'bodega']);
     
-        if ($request->filled('search')) {
-            $query->whereHas('producto', function ($q) use ($request) {
-                $q->where('nombre', 'like', '%' . $request->search . '%')
-                  ->orWhere('codigo_barra', 'like', '%' . $request->search . '%')
-                  ->orWhereHas('categoria', function ($q2) use ($request) {
-                      $q2->where('nombre', 'like', '%' . $request->search . '%');
-                  });
-            });
-        }
-    
-        if ($request->filled('sucursal')) {
-            $query->where('sucursal_id', $request->sucursal);
-        }
-    
-        $inventarios = $query->paginate(10);
-        $sucursales = Sucursale::all();
-    
-        return view('inventarios.index', compact('inventarios', 'sucursales'));
+    if ($request->filled('search')) {
+        $query->whereHas('producto', function ($q) use ($request) {
+            $q->where('nombre', 'like', '%' . $request->search . '%')
+              ->orWhere('codigo_barra', 'like', '%' . $request->search . '%')
+              ->orWhereHas('categoria', function ($q2) use ($request) {
+                  $q2->where('nombre', 'like', '%' . $request->search . '%');
+              });
+        });
     }
+
+    if ($request->filled('sucursal')) {
+        $query->where('sucursal_id', $request->sucursal);
+    }
+
+    $inventarios = $query->paginate(10); // Mantener paginación para la vista
+    $todosInventarios = Inventario::with(['producto', 'sucursal', 'bodega'])->get(); // Obtener todos los inventarios para búsqueda
+
+    $sucursales = Sucursale::all();
+
+    return view('inventarios.index', compact('inventarios', 'sucursales', 'todosInventarios'));
+}
+
     
 
     // Muestra el formulario para crear un nuevo inventario
     public function create()
-    {
-        $productos = Producto::with('categoria')->get();
-        $sucursales = Sucursale::all();
-        $bodegas = Bodega::all();
-        return view('inventarios.create', compact('productos', 'sucursales', 'bodegas'));
-    }
+{
+    $productos = Producto::with('categoria')->get();
+    $bodegas = Bodega::all();
+    $sucursales = Sucursale::all();
+
+    // Obtener los productos que ya están en el inventario
+    $productosInventariados = Inventario::pluck('producto_id')->toArray();
+
+    return view('inventarios.create', compact('productos', 'sucursales', 'bodegas', 'productosInventariados'));
+}
+
 
 
     // Almacena un nuevo inventario en la base de datos
     public function store(Request $request)
     {
+        // Obtener el producto para verificar su unidad de medida
+        $producto = Producto::with('unidadMedida')->find($request->producto_id);
+    
+        // Validar el formulario basándonos en la unidad de medida del producto
         $request->validate([
             'producto_id' => 'required|exists:productos,id',
             'bodega_id' => 'required|exists:bodegas,id',
-            'cantidad' => 'required|integer|min:1'
+            'cantidad' => $producto->unidadMedida->nombre === 'Kilo' ? 'required|numeric|min:0.01' : 'required|integer|min:1',
+        ], [
+            'cantidad.numeric' => 'La cantidad debe ser un número válido para productos vendidos por Kilos.',
+            'cantidad.integer' => 'La cantidad debe ser un número entero para productos no vendidos por Kilos.',
         ]);
-
+    
+        // Verificar si el producto ya existe en cualquier inventario
+        $existe = Inventario::where('producto_id', $request->producto_id)
+                            ->where(function($query) use ($request) {
+                                $query->where('bodega_id', $request->bodega_id)
+                                      ->orWhereNotNull('sucursal_id'); // Verificar en cualquier sucursal también
+                            })
+                            ->exists();
+    
+        // Si ya existe, redireccionar con un mensaje de error
+        if ($existe) {
+            return redirect()->back()->with('error', 'El producto ya existe en el inventario. No se puede duplicar.');
+        }
+    
+        // Crear el nuevo inventario si no existe
         $inventario = Inventario::create($request->all());
-
+    
+        // Registrar el movimiento inicial en la base de datos
         Movimiento::create([
             'producto_id' => $request->producto_id,
             'bodega_id' => $request->bodega_id,
@@ -70,9 +98,11 @@ class InventarioController extends Controller
             'fecha' => now(),
             'user_id' => auth()->id()
         ]);
-
+    
+        // Redireccionar con mensaje de éxito
         return redirect()->route('inventarios.index')->with('success', 'Inventario agregado exitosamente a la bodega.');
     }
+    
 
     // Muestra un inventario específico
     public function show(Inventario $inventario)
@@ -86,127 +116,144 @@ class InventarioController extends Controller
         $productos = Producto::all();
         $sucursales = Sucursale::all();
         $bodegas = Bodega::all();
-        return view('inventarios.edit', compact('inventarios', 'productos', 'sucursales', 'bodegas'));
+        return view('inventarios.edit', compact('inventario', 'productos', 'sucursales', 'bodegas'));
     }
 
     // Actualiza un inventario en la base de datos
-    public function update(Request $request, Inventario $inventario)
-    {
-        $request->validate([
-            'producto_id' => 'required|exists:productos,id',
-            'sucursal_id' => 'required|exists:sucursales,id',
-            'bodega_id' => 'required|exists:bodegas,id',
-            'cantidad' => 'required|integer|min:1'
-        ]);
+public function update(Request $request, Inventario $inventario)
+{
+    // Obtener el producto para verificar su unidad de medida
+    $producto = Producto::with('unidadMedida')->find($request->producto_id);
 
-        $inventario->update($request->all());
-        return redirect()->route('inventarios.index')->with('success', 'Inventario actualizado exitosamente.');
-    }
+    // Validación dinámica según la unidad de medida
+    $request->validate([
+        'producto_id' => 'required|exists:productos,id',
+        'sucursal_id' => 'required|exists:sucursales,id',
+        'bodega_id' => 'required|exists:bodegas,id',
+        'cantidad' => $producto->unidadMedida->nombre === 'Kilo' ? 'required|numeric|min:0.01' : 'required|integer|min:1',
+    ], [
+        'cantidad.numeric' => 'La cantidad debe ser un número válido para productos vendidos por Kilos.',
+        'cantidad.integer' => 'La cantidad debe ser un número entero para productos no vendidos por Kilos.',
+    ]);
+
+    // Actualizar el inventario con los datos validados
+    $inventario->update($request->all());
+
+    // Redirigir con mensaje de éxito
+    return redirect()->route('inventarios.index')->with('success', 'Inventario actualizado exitosamente.');
+}
+
 
     // Elimina un inventario de la base de datos
     public function destroy($id)
-{
-    $inventario = Inventario::findOrFail($id);
-    $inventario->delete();
-    return redirect()->route('inventarios.index')->with('success', 'Inventario eliminado exitosamente.');
-}
+    {
+        $inventario = Inventario::findOrFail($id);
+        $inventario->delete();
+        return redirect()->route('inventarios.index')->with('success', 'Inventario eliminado exitosamente.');
+    }
 
-public function incrementarBodega(Request $request, $inventarioId)
-{
-    $inventario = Inventario::findOrFail($inventarioId);
-    $cantidad = $request->input('cantidad', 1); // Default increment by 1 if not provided
+    // Incrementar la cantidad en la bodega
+    public function incrementarBodega(Request $request, $inventarioId)
+    {
+        $request->validate(['cantidad' => 'required|integer|min:1']);  // Validar el campo cantidad
 
-    $inventario->cantidad += $cantidad;
-    $inventario->save();
-
-    Movimiento::create([
-        'producto_id' => $inventario->producto_id,
-        'bodega_id' => $inventario->bodega_id,
-        'sucursal_id' => null,
-        'tipo' => 'entrada',
-        'cantidad' => $cantidad,
-        'fecha' => now(),
-        'user_id' => auth()->id()
-    ]);
-
-    return back()->with('success', 'Cantidad incrementada correctamente.');
-}
-
-public function decrementarBodega(Request $request, $inventarioId)
-{
-    $inventario = Inventario::findOrFail($inventarioId);
-    $cantidad = $request->input('cantidad', 1); // Default decrement by 1 if not provided
-
-    if ($inventario->cantidad >= $cantidad) {
-        $inventario->cantidad -= $cantidad;
+        $inventario = Inventario::findOrFail($inventarioId);
+        $inventario->cantidad += $request->input('cantidad');
         $inventario->save();
-        
+
         Movimiento::create([
             'producto_id' => $inventario->producto_id,
             'bodega_id' => $inventario->bodega_id,
             'sucursal_id' => null,
-            'tipo' => 'salida',
-            'cantidad' => $cantidad,
+            'tipo' => 'entrada',
+            'cantidad' => $request->input('cantidad'),
             'fecha' => now(),
             'user_id' => auth()->id()
-        ]); 
+        ]);
 
-        return back()->with('success', 'Cantidad decrementada correctamente.');
-    } else {
-        return back()->with('error', 'No hay suficiente stock para decrementar.');
+        return back()->with('success', 'Cantidad incrementada correctamente.');
     }
-}
 
-public function transferirASucursal(Request $request, $inventarioId)
+    // Decrementar la cantidad en la bodega
+    public function decrementarBodega(Request $request, $inventarioId)
+    {
+        $request->validate(['cantidad' => 'required|integer|min:1']);  // Validar el campo cantidad
+
+        $inventario = Inventario::findOrFail($inventarioId);
+        $cantidad = $request->input('cantidad');
+
+        if ($inventario->cantidad >= $cantidad) {
+            $inventario->cantidad -= $cantidad;
+            $inventario->save();
+
+            Movimiento::create([
+                'producto_id' => $inventario->producto_id,
+                'bodega_id' => $inventario->bodega_id,
+                'sucursal_id' => null,
+                'tipo' => 'salida',
+                'cantidad' => $cantidad,
+                'fecha' => now(),
+                'user_id' => auth()->id()
+            ]);
+
+            return back()->with('success', 'Cantidad decrementada correctamente.');
+        } else {
+            return back()->with('error', 'No hay suficiente stock para decrementar.');
+        }
+    }
+
+    // Transferir producto a una sucursal
+    public function transferirASucursal(Request $request, $inventarioId)
 {
+    $request->validate([
+        'sucursal_id' => 'required|exists:sucursales,id',
+        'cantidad' => 'required|integer|min:1'
+    ]);
+
     $inventario = Inventario::findOrFail($inventarioId);
     $cantidad = $request->input('cantidad');
     $sucursalId = $request->input('sucursal_id');
-    $userId = auth()->id(); // Obtener el ID del usuario autenticado
 
-    // Verifica si hay suficiente stock en la bodega
+    // Verificar si hay suficiente stock en la bodega
     if ($inventario->cantidad >= $cantidad) {
         // Resta la cantidad del inventario de la bodega
         $inventario->cantidad -= $cantidad;
         $inventario->save();
 
-        // Verifica si ya existe inventario del producto en la sucursal
+        // Buscar si ya existe un inventario del mismo producto en la sucursal seleccionada
         $inventarioSucursal = Inventario::where('producto_id', $inventario->producto_id)
                             ->where('sucursal_id', $sucursalId)
                             ->first();
 
         if ($inventarioSucursal) {
-            // Si existe, incrementa la cantidad
+            // Si existe en la sucursal, incrementa la cantidad
             $inventarioSucursal->cantidad += $cantidad;
             $inventarioSucursal->save();
         } else {
-            // Si no existe, crea un nuevo registro de inventario para la sucursal
+            // Si no existe, crea un nuevo inventario en la sucursal
             Inventario::create([
                 'producto_id' => $inventario->producto_id,
                 'sucursal_id' => $sucursalId,
                 'cantidad' => $cantidad,
-                'bodega_id' => null // Proporciona null para asegurarse de que no está asociado con la bodega general
+                'bodega_id' => null // Proporciona null para indicar que no está en la bodega general
             ]);
         }
 
         // Registrar el movimiento
         Movimiento::create([
             'producto_id' => $inventario->producto_id,
-            'bodega_id' => null, // Asegúrate de registrar la bodega origen
+            'bodega_id' => null,
             'sucursal_id' => $sucursalId,
             'tipo' => 'transferencia',
             'cantidad' => $cantidad,
             'fecha' => now(),
-            'user_id' => $userId
+            'user_id' => auth()->id()
         ]);
 
         return back()->with('success', 'Producto transferido correctamente a la sucursal.');
     } else {
-        return back()->with('error', 'No hay suficiente stock para transferir.');
+        return back()->with('error', 'No hay suficiente stock en la bodega para transferir.');
     }
 }
-
-
-
 
 }

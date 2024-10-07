@@ -40,13 +40,15 @@ class Producto extends Model
         'categoria_id',
         'proveedor_id',
         'estado',
+
     ];
 
+    
+    public function inventarios()
+    {
+        return $this->hasMany(Inventario::class);
+    }
 
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     public function categoria()
     {
         return $this->belongsTo(\App\Models\Categoria::class, 'categoria_id', 'id');
@@ -68,10 +70,7 @@ class Producto extends Model
         return $this->hasMany(\App\Models\DetallesVentum::class, 'id', 'producto_id');
     }
 
-    public function inventarios()
-    {
-        return $this->hasMany(Inventario::class);
-    }
+    
     
     public function unidadMedida()
     {

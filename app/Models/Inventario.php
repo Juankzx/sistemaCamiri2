@@ -14,12 +14,27 @@ class Inventario extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['producto_id', 'sucursal_id', 'bodega_id', 'cantidad'];
+    protected $fillable = [
+        'producto_id',
+        'sucursal_id', 
+        'bodega_id', 
+        'cantidad',
+        'stock_minimo',
+        'stock_critico',
+    ];
 
-
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
+     // Verifica si el inventario está en nivel crítico
+     public function esCritico()
+     {
+         return $this->cantidad <= $this->stock_critico;
+     }
+ 
+     // Verifica si el inventario está en nivel mínimo
+     public function esMinimo()
+     {
+         return $this->cantidad <= $this->stock_minimo;
+     }
+    
     public function producto()
     {
         //return $this->belongsTo(\App\Models\Producto::class, 'producto_id', 'id');

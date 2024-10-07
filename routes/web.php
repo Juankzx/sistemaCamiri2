@@ -8,6 +8,7 @@ use App\Http\Controllers\ProveedoreController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\MovimientoController;
 use App\Http\Controllers\BodegaController;
+use App\Http\Controllers\VentaController;
 use App\Http\Controllers\OrdenCompraController;
 use App\Http\Controllers\DetalleOrdenCompraController;
 use App\Http\Controllers\GuiaDespachoController;
@@ -18,6 +19,10 @@ use App\Http\Controllers\MetodoPagoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\ReportController;
+use ConsoleTVs\Charts\Facades\Charts;
+use Chartisan\PHP\Chartisan;
+
 
 // Ruta pública de login
 Route::get('/', function () {
@@ -60,6 +65,10 @@ Route::post('/inventarios/incrementar/{id}', [InventarioController::class, 'incr
 Route::post('/inventarios/decrementar/{id}', [InventarioController::class, 'decrementarBodega'])->name('inventarios.decrementar');
 Route::post('/inventarios/transferir/{id}', [InventarioController::class, 'transferirASucursal'])->name('inventarios.transferir');
 Route::get('/api/check-producto-bodega-general/{productoId}', [OrdenCompraController::class, 'checkProductoEnBodegaGeneral']);
+//Route::get('/ventas/{venta}/print', [VentaController::class, 'print'])->name('ventas.print');
+Route::get('/ventas/{id}/print', [VentaController::class, 'print'])->name('ventas.print');
+
+
 
 
 
@@ -95,6 +104,7 @@ Route::get('cajas', [CajaController::class, 'index'])->name('cajas.index');
 Route::post('cajas/abrir', [CajaController::class, 'abrir'])->name('cajas.abrir');
 Route::post('cajas/cerrar/{id}', [CajaController::class, 'cerrar'])->name('cajas.cerrar');
 Route::get('/cajas/{id}', [CajaController::class, 'show'])->name('cajas.show');
+Route::get('/cajas/{id}/imprimir-boleta', [CajaController::class, 'imprimirBoleta'])->name('cajas.imprimir_boleta');
 Route::get('/ventas/{id}', [VentaController::class, 'show'])->name('ventas.show');
 Route::get('productos/sucursal/{id}', [App\Http\Controllers\VentaController::class, 'getProductosPorSucursal']);
 Route::get('productos/sucursal/{sucursalId}', [VentaController::class, 'productosPorSucursal']);
@@ -102,6 +112,11 @@ Route::get('/productos/sucursal/{sucursal}', [ProductoController::class, 'getPro
 // Ruta para buscar productos
 Route::get('/productos/search', [ProductoController::class, 'search'])->name('productos.search');
 
+Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+Route::get('/reports/sales-over-time', [ReportController::class, 'salesOverTime'])->name('reports.sales_over_time');
+Route::get('/reports/inventory-summary', [ReportController::class, 'inventorySummary'])->name('reports.inventory_summary');
+Route::get('/reports/purchase-reports', [ReportController::class, 'purchaseReports'])->name('reports.purchase_reports');
+Route::get('/reports/payment-methods-report', [ReportController::class, 'paymentMethodsReport'])->name('reports.payment_methods_report');
 
 
 

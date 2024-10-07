@@ -21,27 +21,31 @@ class BodegaController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-        ]);
+    $request->validate([
+        'nombre' => 'required|string|max:255|unique:bodegas,nombre',
+    ], [
+        'nombre.unique' => 'El nombre de la bodega ya existe. Por favor, elija un nombre diferente.',
+    ]);
 
-        Bodega::create($request->all());
-        return redirect()->route('bodegas.index')->with('success', 'Bodega creada exitosamente.');
+    Bodega::create($request->all());
+    return redirect()->route('bodegas.index')->with('success', 'Bodega creada exitosamente.');
     }
+
+    public function update(Request $request, Bodega $bodega)
+{
+    $request->validate([
+        'nombre' => 'required|string|max:255|unique:bodegas,nombre,' . $bodega->id,
+    ], [
+        'nombre.unique' => 'El nombre de la bodega ya existe. Por favor, elija un nombre diferente.',
+    ]);
+
+    $bodega->update($request->all());
+    return redirect()->route('bodegas.index')->with('success', 'Bodega actualizada exitosamente.');
+}
 
     public function edit(Bodega $bodega)
     {
         return view('bodegas.edit', compact('bodega'));
-    }
-
-    public function update(Request $request, Bodega $bodega)
-    {
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-        ]);
-
-        $bodega->update($request->all());
-        return redirect()->route('bodegas.index')->with('success', 'Bodega actualizada exitosamente.');
     }
 
     public function destroy(Bodega $bodega)

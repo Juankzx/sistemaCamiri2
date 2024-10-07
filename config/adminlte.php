@@ -414,9 +414,15 @@ return [
                     'text' => 'Unidad de Medida',
                     'url' => 'unidades',
                 ],
+                [
+                    'icon' => 'fa fa-file',
+                    'text' => 'Reportes',
+                    'url' => 'reports',
+                ],
                
             ],
         ],
+        
         
     ],
     

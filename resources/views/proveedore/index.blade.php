@@ -11,7 +11,6 @@
                 <div class="card">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-
                             <span id="card_title">
                                 {{ __('Proveedores') }}
                             </span>
@@ -22,12 +21,6 @@
                             </div>
                         </div>
                     </div>
-
-                    @if ($message = Session::get('success'))
-                        <div class="alert alert-success m-4">
-                            <p>{{ $message }}</p>
-                        </div>
-                    @endif
 
                     <div class="card-body bg-white">
                         <!-- Campo de búsqueda en vivo -->
@@ -58,13 +51,9 @@
                                             <td>{{ $proveedore->telefono }}</td>
                                             <td>{{ $proveedore->email }}</td>
                                             <td>
-                                                <form action="{{ route('proveedores.destroy', $proveedore->id) }}" method="POST">
-                                                    <a class="btn btn-sm btn-primary" href="{{ route('proveedores.show', $proveedore->id) }}"><i class="fa fa-fw fa-eye"></i></a>
-                                                    <a class="btn btn-sm btn-success" href="{{ route('proveedores.edit', $proveedore->id) }}"><i class="fa fa-fw fa-edit"></i></a>
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('¿Estás seguro de eliminar?') ? this.closest('form').submit() : false;"><i class="fa fa-fw fa-trash"></i></button>
-                                                </form>
+                                                <a class="btn btn-sm btn-primary" href="{{ route('proveedores.show', $proveedore->id) }}"><i class="fa fa-fw fa-eye"></i></a>
+                                                <a class="btn btn-sm btn-success" href="{{ route('proveedores.edit', $proveedore->id) }}"><i class="fa fa-fw fa-edit"></i></a>
+                                                <button class="btn btn-sm btn-danger delete-btn" data-id="{{ $proveedore->id }}" data-nombre="{{ $proveedore->nombre }}"><i class="fa fa-fw fa-trash"></i></button>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -77,14 +66,21 @@
             </div>
         </div>
     </div>
+
+    <!-- Formulario oculto para eliminar el proveedor -->
+    <form id="deleteForm" action="" method="POST" style="display:none;">
+        @csrf
+        @method('DELETE')
+    </form>
 @endsection
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Cargamos los proveedores desde la variable PHP en un array de objetos JS
-        const providers = @json($proveedores->toArray()); // Convertimos la colección de proveedores a un array
+        const providers = @json($proveedores->toArray());
 
         // Configuración de Fuse.js
         const options = {
@@ -131,11 +127,7 @@
                             <td>
                                 <a class="btn btn-sm btn-primary" href="/proveedores/${proveedore.id}"><i class="fa fa-fw fa-eye"></i></a>
                                 <a class="btn btn-sm btn-success" href="/proveedores/${proveedore.id}/edit"><i class="fa fa-fw fa-edit"></i></a>
-                                <form action="/proveedores/${proveedore.id}" method="POST" style="display:inline-block;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar?');"><i class="fa fa-fw fa-trash"></i></button>
-                                </form>
+                                <button class="btn btn-sm btn-danger delete-btn" data-id="${proveedore.id}" data-nombre="${proveedore.nombre}"><i class="fa fa-fw fa-trash"></i></button>
                             </td>
                         </tr>
                     `;
@@ -148,6 +140,51 @@
 
         // Mostrar todos los proveedores inicialmente
         displayProviders(providers.data);
+
+        // SweetAlert para la confirmación de eliminación
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const nombre = this.getAttribute('data-nombre');
+
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: `¿Deseas eliminar el proveedor "${nombre}"? Esta acción no se puede deshacer.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const deleteForm = document.getElementById('deleteForm');
+                        deleteForm.action = `/proveedores/${id}`;
+                        deleteForm.submit();
+                    }
+                });
+            });
+        });
+
+        // SweetAlert para mostrar mensajes de éxito o error
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: '{{ session('success') }}',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        @endif
+
+        @if($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Error en la operación',
+                html: '{!! implode("<br>", $errors->all()) !!}',
+                showConfirmButton: true
+            });
+        @endif
     });
 </script>
 @endsection

@@ -16,17 +16,11 @@
                             </span>
                             <div class="float-right">
                                 <a href="{{ route('sucursales.create') }}" class="btn btn-primary btn-sm float-right" data-placement="left">
-                                  {{ __('Create New') }}
+                                  {{ __('+ Agregar') }}
                                 </a>
                             </div>
                         </div>
                     </div>
-
-                    @if ($message = Session::get('success'))
-                        <div class="alert alert-success m-4">
-                            <p>{{ $message }}</p>
-                        </div>
-                    @endif
 
                     <div class="card-body bg-white">
                         <!-- Campo de búsqueda en vivo -->
@@ -51,13 +45,9 @@
                                             <td>{{ $sucursale->nombre }}</td>
                                             <td>{{ $sucursale->direccion }}</td>
                                             <td>
-                                                <form action="{{ route('sucursales.destroy', $sucursale->id) }}" method="POST">
-                                                    <a class="btn btn-sm btn-primary" href="{{ route('sucursales.show', $sucursale->id) }}"><i class="fa fa-fw fa-eye"></i></a>
-                                                    <a class="btn btn-sm btn-success" href="{{ route('sucursales.edit', $sucursale->id) }}"><i class="fa fa-fw fa-edit"></i></a>
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;"><i class="fa fa-fw fa-trash"></i></button>
-                                                </form>
+                                                <a class="btn btn-sm btn-primary" href="{{ route('sucursales.show', $sucursale->id) }}"><i class="fa fa-fw fa-eye"></i></a>
+                                                <a class="btn btn-sm btn-success" href="{{ route('sucursales.edit', $sucursale->id) }}"><i class="fa fa-fw fa-edit"></i></a>
+                                                <button class="btn btn-sm btn-danger delete-btn" data-id="{{ $sucursale->id }}" data-nombre="{{ $sucursale->nombre }}"><i class="fa fa-fw fa-trash"></i></button>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -70,14 +60,21 @@
             </div>
         </div>
     </div>
+
+    <!-- Formulario oculto para eliminación -->
+    <form id="deleteForm" action="" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
 @endsection
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Cargamos las sucursales desde la variable PHP en un array de objetos JS
-        const branches = @json($sucursales->toArray()); // Convertimos la colección a un array
+        const branches = @json($sucursales->toArray());
 
         // Configuración de Fuse.js
         const options = {
@@ -89,7 +86,7 @@
 
         // Manejador del evento input para búsqueda por nombre
         document.getElementById('searchName').addEventListener('input', function(e) {
-            const searchText = e.target.value.trim(); // Elimina espacios en blanco
+            const searchText = e.target.value.trim();
             filterResults(searchText);
         });
 
@@ -97,7 +94,6 @@
         function filterResults(searchText) {
             let filteredBranches = branches.data;
 
-            // Si hay texto en el campo de búsqueda, utilizamos Fuse.js para filtrar
             if (searchText !== '') {
                 const result = fuse.search(searchText);
                 filteredBranches = result.map(r => r.item);
@@ -121,11 +117,7 @@
                             <td>
                                 <a class="btn btn-sm btn-primary" href="/sucursales/${sucursale.id}"><i class="fa fa-fw fa-eye"></i></a>
                                 <a class="btn btn-sm btn-success" href="/sucursales/${sucursale.id}/edit"><i class="fa fa-fw fa-edit"></i></a>
-                                <form action="/sucursales/${sucursale.id}" method="POST" style="display:inline-block;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar?');"><i class="fa fa-fw fa-trash"></i></button>
-                                </form>
+                                <button class="btn btn-sm btn-danger delete-btn" data-id="${sucursale.id}" data-nombre="${sucursale.nombre}"><i class="fa fa-fw fa-trash"></i></button>
                             </td>
                         </tr>
                     `;
@@ -138,6 +130,52 @@
 
         // Mostrar todas las sucursales inicialmente
         displayBranches(branches.data);
+
+        // SweetAlert para confirmación de eliminación y eliminación real
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const nombre = this.getAttribute('data-nombre');
+                const deleteForm = document.getElementById('deleteForm');
+
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: `¿Deseas eliminar la sucursal "${nombre}"? Esta acción no se puede deshacer.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Asignar la acción dinámica al formulario oculto
+                        deleteForm.action = `/sucursales/${id}`;
+                        deleteForm.submit();
+                    }
+                });
+            });
+        });
+
+        // SweetAlert para mensajes de éxito, error y otros tipos de alerta
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: '{{ session('success') }}',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        @endif
+
+        @if($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Error en la operación',
+                html: '{!! implode("<br>", $errors->all()) !!}',
+                showConfirmButton: true
+            });
+        @endif
     });
 </script>
 @endsection

@@ -13,8 +13,20 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Listado de Cajas</h3>
-                    @if (!$cajaAbierta)
-                        <button class="btn btn-primary btn-sm float-right" data-toggle="modal" data-target="#abrirCajaModal">Abrir Nueva Caja</button>
+                    
+                    @if ($cajaAbierta)
+                        <!-- Botón de cerrar caja en la cabecera con total de ventas -->
+                        <button class="btn btn-danger btn-sm float-right" data-toggle="modal" data-target="#cerrarCajaModal" 
+                                data-id="{{ $cajaAbierta->id }}" 
+                                data-ventas="{{ $montoVentas }}" 
+                                title="Cerrar Caja">
+                            <i class="fas fa-lock"></i>
+                        </button>
+                    @else
+                        <!-- Botón de abrir caja en la cabecera -->
+                        <button class="btn btn-primary btn-sm float-right" data-toggle="modal" data-target="#abrirCajaModal">
+                            <i class="fas fa-cash-register"></i>
+                        </button>
                     @endif
                 </div>
 
@@ -62,9 +74,15 @@
                                     <td>$ {{ $caja->monto_cierre ? number_format($caja->monto_cierre, 0) : 'N/A' }}</td>
                                     <td>{{ $caja->estado ? 'Abierta' : 'Cerrada' }}</td>
                                     <td>
-                                        <a href="{{ route('cajas.show', $caja->id) }}" class="btn btn-xs btn-primary">Ver</a>
-                                        @if ($caja->estado)
-                                            <button class="btn btn-xs btn-danger" data-toggle="modal" data-target="#cerrarCajaModal" data-id="{{ $caja->id }}" data-monto="{{ $montoVentas }}">Cerrar</button>
+                                        <!-- Botón de Ver -->
+                                        <a href="{{ route('cajas.show', $caja->id) }}" class="btn btn-xs btn-info" title="Ver Detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        @if (!$caja->estado)
+                                            <!-- Botón para Imprimir Boleta solo si la caja está cerrada -->
+                                            <a href="{{ route('cajas.imprimir_boleta', $caja->id) }}" class="btn btn-xs btn-success" title="Imprimir Boleta" target="_blank">
+                                                <i class="fas fa-print"></i>
+                                            </a>
                                         @endif
                                     </td>
                                 </tr>
@@ -77,22 +95,25 @@
                     </table>
                 </div>
             </div>
-            {{ $cajas->links() }}
+            <!-- Paginación personalizada con Bootstrap -->
+            <div class="d-flex justify-content-center">
+                {{ $cajas->links('pagination::bootstrap-4') }}
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Modal para Abrir Caja -->
 <div class="modal fade" id="abrirCajaModal" tabindex="-1" aria-labelledby="abrirCajaModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="abrirCajaModalLabel">Abrir Caja</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="abrirCajaModalLabel"><i class="fas fa-cash-register"></i> Abrir Caja</h5>
+                <button type="button" class="btn-close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form method="POST" action="{{ route('cajas.abrir') }}">
+            <form method="POST" action="{{ route('cajas.abrir') }}" id="abrirCajaForm">
                 @csrf
                 <div class="modal-body">
                     <div class="form-group">
@@ -119,25 +140,25 @@
 
 <!-- Modal para Cerrar Caja -->
 <div class="modal fade" id="cerrarCajaModal" tabindex="-1" aria-labelledby="cerrarCajaModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="cerrarCajaModalLabel">Cerrar Caja</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cerrarCajaModalLabel"><i class="fas fa-lock"></i> Cerrar Caja</h5>
+                <button type="button" class="btn-close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form method="POST" action="{{ route('cajas.cerrar', ['id' => $cajaAbierta ? $cajaAbierta->id : 0]) }}">
+            <form method="POST" action="{{ route('cajas.cerrar', ['id' => $cajaAbierta ? $cajaAbierta->id : 0]) }}" id="cerrarCajaForm">
                 @csrf
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="monto_cierre">Monto de Cierre:</label>
-                        <input type="number" class="form-control" name="monto_cierre" id="monto_cierre" required>
+                        <input type="number" class="form-control" name="monto_cierre" id="monto_cierre" readonly required>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Cerrar Caja</button>
+                    <button type="submit" class="btn btn-danger">Cerrar Caja</button>
                 </div>
             </form>
         </div>
@@ -145,107 +166,13 @@
 </div>
 @stop
 
-@section('css')
-    <style>
-        .container-fluid {
-            padding-top: 20px;
-        }
-    </style>
-@stop
-
 @section('js')
-<script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const cajas = @json($cajas); // Obtenemos las cajas desde PHP
-
-        // Configuración de Fuse.js
-        const options = {
-            keys: ['sucursal.nombre', 'estado', 'fecha_apertura'], // Claves para búsqueda
-            threshold: 0.3 // Sensibilidad
-        };
-
-        const fuse = new Fuse(cajas.data, options);
-
-        // Mostrar todas las cajas inicialmente
-        displayCajas(cajas.data);
-
-        // Manejador para búsqueda por sucursal
-        document.getElementById('searchSucursal').addEventListener('input', function(e) {
-            filterCajas();
-        });
-
-        // Manejador para búsqueda por estado
-        document.getElementById('searchEstado').addEventListener('change', function(e) {
-            filterCajas();
-        });
-
-        // Manejador para búsqueda por fecha
-        document.getElementById('searchFecha').addEventListener('change', function(e) {
-            filterCajas();
-        });
-
-        // Función para filtrar las cajas
-        function filterCajas() {
-    const searchSucursal = document.getElementById('searchSucursal').value.trim();
-    const searchEstado = document.getElementById('searchEstado').value;
-    const searchFecha = document.getElementById('searchFecha').value;
-
-    let filteredCajas = cajas.data;
-
-    // Filtro por sucursal
-    if (searchSucursal !== '') {
-        const result = fuse.search(searchSucursal);
-        filteredCajas = result.map(r => r.item);
-    }
-
-    // Filtro por estado
-    if (searchEstado !== '') {
-        filteredCajas = filteredCajas.filter(caja => {
-            // Verificamos si el estado es booleano y lo convertimos a 'Abierta' o 'Cerrada'
-            const estadoActual = caja.estado ? 'Abierta' : 'Cerrada';
-            return estadoActual === searchEstado;
-        });
-    }
-
-    // Filtro por fecha de apertura
-    if (searchFecha !== '') {
-        filteredCajas = filteredCajas.filter(caja => caja.fecha_apertura.startsWith(searchFecha));
-    }
-
-    displayCajas(filteredCajas);
-}
-
-
-        // Función para mostrar las cajas
-        function displayCajas(filteredCajas) {
-            const tableBody = document.querySelector('#cajasTableBody');
-            tableBody.innerHTML = '';
-
-            if (filteredCajas.length > 0) {
-                filteredCajas.forEach(caja => {
-                    const row = `
-                        <tr>
-                            <td>${caja.id}</td>
-                            <td>${caja.sucursal.nombre}</td>
-                            <td>${caja.user.name}</td>
-                            <td>${new Date(caja.fecha_apertura).toLocaleString()}</td>
-                            <td>${caja.fecha_cierre ? new Date(caja.fecha_cierre).toLocaleString() : 'N/A'}</td>
-                            <td>$${caja.monto_apertura.toLocaleString()}</td>
-                            <td>${caja.monto_cierre ? `$${caja.monto_cierre.toLocaleString()}` : 'N/A'}</td>
-                            <td>${caja.estado ? 'Abierta' : 'Cerrada'}</td>
-                            <td>
-                                <a href="/cajas/${caja.id}" class="btn btn-xs btn-primary">Ver</a>
-                                ${caja.estado ? `<button class="btn btn-xs btn-danger" data-toggle="modal" data-target="#cerrarCajaModal" data-id="${caja.id}" data-monto="${caja.monto_apertura}">Cerrar</button>` : ''}
-                            </td>
-                        </tr>
-                    `;
-                    tableBody.innerHTML += row;
-                });
-            } else {
-                tableBody.innerHTML = '<tr><td colspan="9" class="text-center">No se encontraron cajas.</td></tr>';
-            }
-        }
+    $('#cerrarCajaModal').on('show.bs.modal', function(event) {
+        const button = $(event.relatedTarget);
+        const ventas = button.data('ventas');
+        const modal = $(this);
+        modal.find('.modal-body #monto_cierre').val(ventas);
     });
 </script>
 @stop

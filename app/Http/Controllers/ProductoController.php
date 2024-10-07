@@ -52,9 +52,10 @@ class ProductoController extends Controller
      */
     public function store(Request $request)
     {
+        // Validar que 'nombre' y 'codigo_barra' sean únicos en combinación
         $request->validate([
-            'codigo_barra' => 'required|string|max:255',
-            'nombre' => 'required|string|max:255',
+            'codigo_barra' => 'required|string|max:255|unique:productos,codigo_barra',
+            'nombre' => 'required|string|max:255|unique:productos,nombre',
             'unidadmedida_id' => 'required|exists:unidad_medida,id',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'preciocompra' => 'required|integer',
@@ -62,18 +63,65 @@ class ProductoController extends Controller
             'categoria_id' => 'nullable|exists:categorias,id',
             'proveedor_id' => 'nullable|exists:proveedores,id',
             'estado' => 'required|boolean',
+        ], [
+            'nombre.unique' => 'El nombre del producto ya existe. Por favor, elija un nombre diferente.',
+            'codigo_barra.unique' => 'El código de barras ya está registrado para otro producto.',
         ]);
-
+    
         $data = $request->all();
-
+    
         if ($request->hasFile('imagen')) {
             $data['imagen'] = $request->file('imagen')->store('imagenes', 'public');
         }
-
+    
         Producto::create($data);
-
+    
         return redirect()->route('productos.index')->with('success', 'Producto creado exitosamente.');
     }
+    
+    public function update(Request $request, Producto $producto): RedirectResponse
+    {
+        // Validar 'nombre' y 'codigo_barra' asegurando que no se dupliquen excepto para el producto actual
+        $request->validate([
+            'codigo_barra' => 'required|string|max:255|unique:productos,codigo_barra,' . $producto->id,
+            'nombre' => 'required|string|max:255|unique:productos,nombre,' . $producto->id,
+            'unidadmedida_id' => 'required|exists:unidad_medida,id',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'preciocompra' => 'required|numeric',
+            'precioventa' => 'required|numeric',
+            'categoria_id' => 'required|exists:categorias,id',
+            'proveedor_id' => 'required|exists:proveedores,id',
+        ], [
+            'nombre.unique' => 'El nombre del producto ya existe. Por favor, elija un nombre diferente.',
+            'codigo_barra.unique' => 'El código de barras ya está registrado para otro producto.',
+        ]);
+    
+        // Actualizar el producto con los datos validados
+        $producto->codigo_barra = $request->codigo_barra;
+        $producto->nombre = $request->nombre;
+        $producto->unidadmedida_id = $request->unidadmedida_id; // Asignar la unidad de medida
+        $producto->preciocompra = $request->preciocompra;
+        $producto->precioventa = $request->precioventa;
+        $producto->categoria_id = $request->categoria_id;
+        $producto->proveedor_id = $request->proveedor_id;
+    
+        // Si se sube una nueva imagen, eliminar la anterior y guardar la nueva
+        if ($request->hasFile('imagen')) {
+            // Eliminar la imagen antigua si existe
+            if ($producto->imagen) {
+                Storage::disk('public')->delete($producto->imagen);
+            }
+    
+            // Guardar la nueva imagen y actualizar en la base de datos
+            $producto->imagen = $request->file('imagen')->store('imagenes', 'public');
+        }
+    
+        $producto->save();
+    
+        return redirect()->route('productos.index')->with('success', 'Producto actualizado exitosamente.');
+    }
+    
+
     
     /**
      * Display the specified resource.
@@ -109,40 +157,7 @@ class ProductoController extends Controller
         return view('producto.edit', compact('producto', 'categorias', 'proveedores', 'sucursales', 'unidadMedida'));
     }
 
-    public function update(Request $request, Producto $producto): RedirectResponse
-{
-    $validated = $request->validate([
-        'codigo_barra' => 'required|string|max:255',
-        'nombre' => 'required|string|max:255',
-        'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-        'preciocompra' => 'required|numeric',
-        'precioventa' => 'required|numeric',
-        'categoria_id' => 'required|exists:categorias,id',
-        'proveedor_id' => 'required|exists:proveedores,id',
-    ]);
-
-    $producto->codigo_barra = $validated['codigo_barra'];
-    $producto->nombre = $validated['nombre'];
-    $producto->preciocompra = $validated['preciocompra']; // Corregido
-    $producto->precioventa = $validated['precioventa']; // Corregido
-    $producto->categoria_id = $validated['categoria_id'];
-    $producto->proveedor_id = $validated['proveedor_id'];
-
-    if ($request->hasFile('imagen')) {
-        // Eliminar imagen antigua
-        if ($producto->imagen) {
-            Storage::disk('public')->delete($producto->imagen);
-        }
-        // Guardar nueva imagen
-        $imagen_path = $request->file('imagen')->store('imagenes', 'public');
-        // Guardar en la base de datos
-        $producto->imagen = $imagen_path;
-    }
-
-    $producto->save();
-    
-    return redirect()->route('productos.index')->with('success', 'Éxito, su producto ha sido actualizado.');
-}
+   
 
     public function destroy($id): RedirectResponse
     {
@@ -191,6 +206,7 @@ public function getProductosPorSucursal($sucursalId)
     // Devolver los productos como JSON
     return response()->json($productos->items());
 }
+
 
 
 

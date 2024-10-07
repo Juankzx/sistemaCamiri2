@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 
 @section('template_title')
-    {{ __('Create') }} Metodos Pago
+    {{ __('Crear') }} Metodos Pago
 @endsection
 
 @section('content')
@@ -11,7 +11,7 @@
 
                 <div class="card card-default">
                     <div class="card-header">
-                        <span class="card-title">{{ __('Create') }} Metodos Pago</span>
+                        <span class="card-title">{{ __('Crear') }} Metodos Pago</span>
                     </div>
                     <div class="card-body bg-white">
                         <form method="POST" action="{{ route('metodos-pagos.store') }}"  role="form" enctype="multipart/form-data">

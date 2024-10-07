@@ -8,7 +8,9 @@
         </div>
 
     </div>
-    <div class="col-md-12 mt20 mt-2">
-        <button type="submit" class="btn btn-primary">{{ __('Submit') }}</button>
+    <div class="col-md-12 mt20 mt-2 d-flex justify-content-between">
+        <button type="submit" class="btn btn-primary">{{ __('Guardar') }}</button>
+        <!-- Botón Volver -->
+        <a href="{{ route('metodos-pagos.index') }}" class="btn btn-secondary">{{ __('Volver') }}</a>
     </div>
 </div>

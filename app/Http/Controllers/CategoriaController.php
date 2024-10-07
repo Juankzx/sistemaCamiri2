@@ -35,13 +35,23 @@ class CategoriaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(CategoriaRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        Categoria::create($request->validated());
+        // Validación que asegura que el nombre sea único
+        $request->validate([
+            'nombre' => 'required|string|max:255|unique:categorias,nombre',
+            'descripcion' => 'nullable|string|max:255',
+            'estado' => 'required|boolean',
+        ], [
+            'nombre.unique' => 'El nombre de la categoría ya existe. Por favor, elija un nombre diferente.',
+        ]);
+
+        Categoria::create($request->all());
 
         return Redirect::route('categorias.index')
-            ->with('success', 'Categoria created successfully.');
+            ->with('success', 'Categoría creada exitosamente.');
     }
+
 
     /**
      * Display the specified resource.
@@ -66,12 +76,21 @@ class CategoriaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(CategoriaRequest $request, Categoria $categoria): RedirectResponse
+    public function update(Request $request, Categoria $categoria): RedirectResponse
     {
-        $categoria->update($request->validated());
+        // Validación que asegura que el nombre no se duplique excepto para la categoría actual
+        $request->validate([
+            'nombre' => 'required|string|max:255|unique:categorias,nombre,' . $categoria->id,
+            'descripcion' => 'nullable|string|max:255',
+            'estado' => 'required|boolean',
+        ], [
+            'nombre.unique' => 'El nombre de la categoría ya existe. Por favor, elija un nombre diferente.',
+        ]);
+
+        $categoria->update($request->all());
 
         return Redirect::route('categorias.index')
-            ->with('success', 'Categoria updated successfully');
+            ->with('success', 'Categoría actualizada exitosamente.');
     }
 
     public function destroy($id): RedirectResponse

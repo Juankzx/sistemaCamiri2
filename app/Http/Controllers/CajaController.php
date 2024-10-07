@@ -46,7 +46,7 @@ class CajaController extends Controller
         ]);
         $caja->save();
 
-        return redirect()->route('cajas.index')->with('success', 'Caja abierta con éxito.');
+        return redirect()->route('ventas.create')->with('success', 'Caja abierta con éxito.');
     }
 
     public function cerrar(Request $request, $id)
@@ -94,4 +94,50 @@ class CajaController extends Controller
 
         return view('cajas.show', compact('caja', 'ventas', 'totalVentas', 'ventasEfectivo', 'totalEfectivo', 'ventasTarjeta', 'totalTarjeta'));
     }
+ 
+    public function imprimirboleta($id)
+{
+    // Obtener la caja por su ID con la relación de sucursal y usuario
+    $caja = Caja::with(['user', 'sucursal'])->findOrFail($id);
+
+    // Determinar la fecha de cierre (si está cerrada se usa `fecha_cierre`, si no se usa la fecha actual)
+    $fechaCierre = $caja->fecha_cierre ? $caja->fecha_cierre : now();
+
+    // Obtener las ventas realizadas durante el periodo de apertura de la caja en la sucursal correspondiente
+    $ventas = Venta::where('sucursal_id', $caja->sucursal_id)
+                   ->whereBetween('created_at', [$caja->fecha_apertura, $fechaCierre])
+                   ->get();
+
+    // Calcular el total de ventas realizadas
+    $totalVentas = $ventas->sum('total');
+
+    // Contar y sumar las ventas realizadas con cada método de pago
+    $ventasEfectivo = $ventas->where('metodo_pago_id', 1)->count(); // ID 1 = Efectivo
+    $totalEfectivo = $ventas->where('metodo_pago_id', 1)->sum('total');
+
+    $ventasTarjeta = $ventas->where('metodo_pago_id', 2)->count(); // ID 2 = Tarjeta
+    $totalTarjeta = $ventas->where('metodo_pago_id', 2)->sum('total');
+
+    $ventasAmipass = $ventas->where('metodo_pago_id', 3)->count(); // ID 3 = Amipass
+    $totalAmipass = $ventas->where('metodo_pago_id', 3)->sum('total');
+
+    // Calcular los gastos de caja (esto es opcional, puedes asignar un valor si no usas esta funcionalidad)
+    $totalGastos = 0; // Puedes calcular esto si tienes una tabla de gastos
+
+    // Calcular el balance final
+    $balanceFinal = $caja->monto_apertura + $totalVentas - $totalGastos;
+
+    // Total de ventas realizadas en todas las formas de pago
+    $totalVentasRealizadas = $ventasEfectivo + $ventasTarjeta + $ventasAmipass;
+
+    // Retornar la vista `boleta_arqueo` con todos los datos necesarios
+    return view('cajas.boleta_arqueo', compact(
+        'caja', 'totalEfectivo', 'ventasEfectivo', 'totalTarjeta', 'ventasTarjeta',
+        'totalAmipass', 'ventasAmipass', 'totalVentas', 'totalGastos',
+        'balanceFinal', 'totalVentasRealizadas'
+    ));
+}
+
+
+
 }

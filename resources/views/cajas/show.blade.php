@@ -53,7 +53,7 @@
                                 <td>{{ \Carbon\Carbon::parse($venta->fecha)->format('d/m/Y H:i:s') }}</td>
                                 <td>${{ number_format($venta->total, 0) }}</td>
                                 <td>
-                                    <a class="btn btn-sm btn-primary " href="{{ route('ventas.show', $venta->id) }}"><i class="fa fa-fw fa-eye"></i> Ver</a>
+                                    <a class="btn btn-sm btn-primary " href="{{ route('ventas.show', $venta->id) }}"><i class="fa fa-fw fa-eye"></i></a>
                                 </td>
                             </tr>
                         @endforeach

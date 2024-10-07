@@ -16,17 +16,11 @@
                             </span>
                             <div class="float-right">
                                 <a href="{{ route('metodos-pagos.create') }}" class="btn btn-primary btn-sm float-right" data-placement="left">
-                                  {{ __('Create New') }}
+                                  {{ __('+ Agregar') }}
                                 </a>
                             </div>
                         </div>
                     </div>
-
-                    @if ($message = Session::get('success'))
-                        <div class="alert alert-success m-4">
-                            <p>{{ $message }}</p>
-                        </div>
-                    @endif
 
                     <div class="card-body bg-white">
                         <!-- Campo de búsqueda en vivo -->
@@ -49,13 +43,9 @@
                                             <td>{{ ++$i }}</td>
                                             <td>{{ $metodosPago->nombre }}</td>
                                             <td>
-                                                <form action="{{ route('metodos-pagos.destroy', $metodosPago->id) }}" method="POST">
-                                                    <a class="btn btn-sm btn-primary" href="{{ route('metodos-pagos.show', $metodosPago->id) }}"><i class="fa fa-fw fa-eye"></i></a>
-                                                    <a class="btn btn-sm btn-success" href="{{ route('metodos-pagos.edit', $metodosPago->id) }}"><i class="fa fa-fw fa-edit"></i></a>
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;"><i class="fa fa-fw fa-trash"></i></button>
-                                                </form>
+                                                <a class="btn btn-sm btn-primary" href="{{ route('metodos-pagos.show', $metodosPago->id) }}"><i class="fa fa-fw fa-eye"></i></a>
+                                                <a class="btn btn-sm btn-success" href="{{ route('metodos-pagos.edit', $metodosPago->id) }}"><i class="fa fa-fw fa-edit"></i></a>
+                                                <button class="btn btn-sm btn-danger delete-btn" data-id="{{ $metodosPago->id }}" data-nombre="{{ $metodosPago->nombre }}"><i class="fa fa-fw fa-trash"></i></button>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -72,6 +62,7 @@
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Cargamos los métodos de pago desde la variable PHP en un array de objetos JS
@@ -118,11 +109,7 @@
                             <td>
                                 <a class="btn btn-sm btn-primary" href="/metodos-pagos/${metodosPago.id}"><i class="fa fa-fw fa-eye"></i></a>
                                 <a class="btn btn-sm btn-success" href="/metodos-pagos/${metodosPago.id}/edit"><i class="fa fa-fw fa-edit"></i></a>
-                                <form action="/metodos-pagos/${metodosPago.id}" method="POST" style="display:inline-block;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure to delete?');"><i class="fa fa-fw fa-trash"></i></button>
-                                </form>
+                                <button class="btn btn-sm btn-danger delete-btn" data-id="${metodosPago.id}" data-nombre="${metodosPago.nombre}"><i class="fa fa-fw fa-trash"></i></button>
                             </td>
                         </tr>
                     `;
@@ -135,6 +122,61 @@
 
         // Mostrar todos los métodos de pago inicialmente
         displayPaymentMethods(paymentMethods.data);
+
+        // SweetAlert para la confirmación de eliminación
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const nombre = this.getAttribute('data-nombre');
+
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: `¿Deseas eliminar el método de pago "${nombre}"? Esta acción no se puede deshacer.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Crear un formulario dinámicamente para la eliminación
+                        const form = document.createElement('form');
+                        form.action = `/metodos-pagos/${id}`;
+                        form.method = 'POST';
+                        form.style.display = 'none';
+
+                        // Agregar tokens y método DELETE
+                        form.innerHTML = `
+                            @csrf
+                            @method('DELETE')
+                        `;
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
+            });
+        });
+
+        // SweetAlert para mostrar mensajes de éxito, error y otros tipos de alerta
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: '{{ session('success') }}',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        @endif
+
+        @if($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Error en la operación',
+                html: '{!! implode("<br>", $errors->all()) !!}',
+                showConfirmButton: true
+            });
+        @endif
     });
 </script>
 @endsection

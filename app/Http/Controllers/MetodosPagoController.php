@@ -37,10 +37,17 @@ class MetodosPagoController extends Controller
      */
     public function store(MetodosPagoRequest $request): RedirectResponse
     {
-        MetodosPago::create($request->validated());
+        // Validar que el nombre sea único en la tabla
+        $request->validate([
+            'nombre' => 'required|string|max:255|unique:metodos_pagos,nombre',
+        ], [
+            'nombre.unique' => 'El nombre del método de pago ya existe.',
+        ]);
+
+        MetodosPago::create($request->all());
 
         return Redirect::route('metodos-pagos.index')
-            ->with('success', 'MetodosPago created successfully.');
+            ->with('success', 'Método de pago creado exitosamente.');
     }
 
     /**
@@ -66,13 +73,21 @@ class MetodosPagoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(MetodosPagoRequest $request, MetodosPago $metodosPago): RedirectResponse
+    public function update(Request $request, MetodosPago $metodosPago): RedirectResponse
     {
-        $metodosPago->update($request->validated());
+        // Validar que el nombre no se duplique, exceptuando el registro actual
+        $request->validate([
+            'nombre' => 'required|string|max:255|unique:metodos_pagos,nombre,' . $metodosPago->id,
+        ], [
+            'nombre.unique' => 'El nombre del método de pago ya existe.',
+        ]);
+
+        $metodosPago->update($request->all());
 
         return Redirect::route('metodos-pagos.index')
-            ->with('success', 'MetodosPago updated successfully');
+            ->with('success', 'Método de pago actualizado exitosamente.');
     }
+
 
     public function destroy($id): RedirectResponse
     {

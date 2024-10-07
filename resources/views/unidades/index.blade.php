@@ -28,30 +28,34 @@
                         <td>
                             <a href="{{ route('unidades.show', $unidad) }}" class="btn btn-sm btn-primary"><i class="fa fa-fw fa-eye"></i></a>
                             <a href="{{ route('unidades.edit', $unidad) }}" class="btn btn-sm btn-success"><i class="fa fa-fw fa-edit"></i></a>
-                            <form action="{{ route('unidades.destroy', $unidad) }}" method="POST" style="display:inline-block;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-fw fa-trash"></i></button>
-                            </form>
+                            <!-- Botón para eliminar con SweetAlert -->
+                            <button class="btn btn-sm btn-danger delete-btn" data-id="{{ $unidad->id }}" data-nombre="{{ $unidad->nombre }}"><i class="fa fa-fw fa-trash"></i></button>
                         </td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
     </div>
+
+    <!-- Formulario oculto para eliminación -->
+    <form id="deleteForm" action="" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
 @endsection
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Cargamos las unidades desde la variable PHP en un array de objetos JS
-        const units = @json($unidades); // Simplemente utilizamos @json($unidades)
+        const units = @json($unidades);
 
         // Configuración de Fuse.js
         const options = {
-            keys: ['nombre'], // Solo buscamos en el nombre de las unidades
-            threshold: 0.3 // Sensibilidad de la búsqueda
+            keys: ['nombre'],
+            threshold: 0.3
         };
 
         const fuse = new Fuse(units, options);
@@ -61,7 +65,7 @@
 
         // Manejador del evento input para búsqueda por nombre
         document.getElementById('searchName').addEventListener('input', function(e) {
-            const searchText = e.target.value.trim(); // Elimina espacios en blanco
+            const searchText = e.target.value.trim();
             filterResults(searchText);
         });
 
@@ -69,7 +73,6 @@
         function filterResults(searchText) {
             let filteredUnits = units;
 
-            // Si hay texto en el campo de búsqueda, utilizamos Fuse.js para filtrar
             if (searchText !== '') {
                 const result = fuse.search(searchText);
                 filteredUnits = result.map(r => r.item);
@@ -84,7 +87,7 @@
             tableBody.innerHTML = '';
 
             if (filteredUnits.length > 0) {
-                filteredUnits.forEach((unidad, index) => {
+                filteredUnits.forEach((unidad) => {
                     const row = `
                         <tr>
                             <td>${unidad.id}</td>
@@ -93,11 +96,7 @@
                             <td>
                                 <a href="/unidades/${unidad.id}" class="btn btn-sm btn-primary"><i class="fa fa-fw fa-eye"></i></a>
                                 <a href="/unidades/${unidad.id}/edit" class="btn btn-sm btn-success"><i class="fa fa-fw fa-edit"></i></a>
-                                <form action="/unidades/${unidad.id}" method="POST" style="display:inline-block;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de eliminar?');"><i class="fa fa-fw fa-trash"></i></button>
-                                </form>
+                                <button class="btn btn-sm btn-danger delete-btn" data-id="${unidad.id}" data-nombre="${unidad.nombre}"><i class="fa fa-fw fa-trash"></i></button>
                             </td>
                         </tr>
                     `;
@@ -106,7 +105,61 @@
             } else {
                 tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No se encontraron unidades.</td></tr>';
             }
+
+            // Reasignar el evento de eliminación con SweetAlert para los botones recién generados
+            addDeleteEvent();
         }
+
+        // SweetAlert para la confirmación de eliminación
+        function addDeleteEvent() {
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const nombre = this.getAttribute('data-nombre');
+
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: `¿Deseas eliminar la unidad de medida "${nombre}"? Esta acción no se puede deshacer.`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sí, eliminar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Si se confirma, enviar el formulario de eliminación con la URL correcta
+                            const form = document.getElementById('deleteForm');
+                            form.action = `/unidades/${id}`;
+                            form.submit(); // Enviar el formulario de eliminación
+                        }
+                    });
+                });
+            });
+        }
+
+        // Añadir los eventos a los botones de eliminación existentes al cargar la página
+        addDeleteEvent();
+
+        // SweetAlert para mostrar mensajes de éxito, error y otros tipos de alerta
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: '{{ session('success') }}',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        @endif
+
+        @if($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Error en la operación',
+                html: '{!! implode("<br>", $errors->all()) !!}',
+                showConfirmButton: true
+            });
+        @endif
     });
 </script>
 @endsection

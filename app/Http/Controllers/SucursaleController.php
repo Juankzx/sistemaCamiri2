@@ -35,13 +35,21 @@ class SucursaleController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(SucursaleRequest $request): RedirectResponse
-    {
-        Sucursale::create($request->validated());
+    public function store(Request $request): RedirectResponse
+{
+    $request->validate([
+        'nombre' => 'required|string|max:255|unique:sucursales,nombre',
+        'direccion' => 'nullable|string|max:255'
+    ], [
+        'nombre.unique' => 'El nombre de la sucursal ya existe. Por favor, elija un nombre diferente.'
+    ]);
 
-        return Redirect::route('sucursales.index')
-            ->with('success', 'Sucursale created successfully.');
-    }
+    Sucursale::create($request->all());
+
+    return redirect()->route('sucursales.index')
+        ->with('success', 'Sucursal creada exitosamente.');
+}
+
 
     /**
      * Display the specified resource.
@@ -66,13 +74,20 @@ class SucursaleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(SucursaleRequest $request, Sucursale $sucursale): RedirectResponse
-    {
-        $sucursale->update($request->validated());
+    public function update(Request $request, Sucursale $sucursale): RedirectResponse
+{
+    $request->validate([
+        'nombre' => 'required|string|max:255|unique:sucursales,nombre,' . $sucursale->id,
+        'direccion' => 'nullable|string|max:255'
+    ], [
+        'nombre.unique' => 'El nombre de la sucursal ya existe. Por favor, elija un nombre diferente.'
+    ]);
 
-        return Redirect::route('sucursales.index')
-            ->with('success', 'Sucursale updated successfully');
-    }
+    $sucursale->update($request->all());
+
+    return redirect()->route('sucursales.index')
+        ->with('success', 'Sucursal actualizada exitosamente.');
+}
 
     public function destroy($id): RedirectResponse
     {
