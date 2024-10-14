@@ -281,7 +281,17 @@ function adjustQuantity(productId, change) {
         updateCartDisplay();
     }
 }
-
+// Alerta para mostrar si se inicia caja con éxito
+@if(session('success'))
+    document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+            icon: 'success',
+            title: 'Caja Iniciada',
+            text: '{{ session('success') }}',
+            confirmButtonText: 'Aceptar'
+        });
+    });
+    @endif
 
 function inputQuantity(productId, value) {
     const item = cart.find(item => item.id === productId);

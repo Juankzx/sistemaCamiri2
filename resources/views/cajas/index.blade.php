@@ -8,6 +8,7 @@
 
 @section('content')
 <div class="container-fluid">
+    
     <div class="row">
         <div class="col-md-12">
             <div class="card">
@@ -33,7 +34,13 @@
                 <!-- Campos de búsqueda en vivo -->
                 <div class="row mb-3 p-2">
                     <div class="col-md-4">
-                        <input type="text" id="searchSucursal" class="form-control" placeholder="Buscar por sucursal...">
+                        <!-- Select para buscar sucursal -->
+                        <select id="searchSucursal" class="form-control">
+                            <option value="">Buscar por sucursal</option>
+                            @foreach($sucursales as $sucursal)
+                                <option value="{{ $sucursal->nombre }}">{{ $sucursal->nombre }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="col-md-4">
                         <select id="searchEstado" class="form-control">
@@ -95,10 +102,17 @@
                     </table>
                 </div>
             </div>
-            <!-- Paginación personalizada con Bootstrap -->
-            <div class="d-flex justify-content-center">
-                {{ $cajas->links('pagination::bootstrap-4') }}
+            <!-- Sección de Paginación -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                <p class="small text-muted">
+                    Mostrando {{ $cajas->firstItem() }} a {{ $cajas->lastItem() }} de {{ $cajas->total() }} registros
+                </p>
             </div>
+            <div>
+                {{ $cajas->links('pagination::bootstrap-4') }} <!-- Estilo Bootstrap 4 para la paginación -->
+            </div>
+        </div>
         </div>
     </div>
 </div>
@@ -117,21 +131,27 @@
                 @csrf
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="sucursal_id">Sucursal:</label>
-                        <select class="form-control" name="sucursal_id" required>
-                            @foreach($sucursales as $sucursal)
-                                <option value="{{ $sucursal->id }}">{{ $sucursal->nombre }}</option>
-                            @endforeach
-                        </select>
+                        <label for="sucursal_id" class="form-label">Sucursal:</label>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-store-alt"></i></span>
+                            <select class="form-control" name="sucursal_id" required>
+                                @foreach($sucursales as $sucursal)
+                                    <option value="{{ $sucursal->id }}">{{ $sucursal->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="monto_apertura">Monto de Apertura:</label>
-                        <input type="number" class="form-control" name="monto_apertura" required value="0">
+                        <label for="monto_apertura" class="form-label">Monto de Apertura:</label>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                            <input type="number" class="form-control" name="monto_apertura" required value="0">
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Abrir Caja</button>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary btn-md" data-dismiss="modal"><i class="fas fa-times-circle"></i> Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-md"><i class="fas fa-check-circle"></i> Abrir Caja</button>
                 </div>
             </form>
         </div>
@@ -152,13 +172,16 @@
                 @csrf
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="monto_cierre">Monto de Cierre:</label>
-                        <input type="number" class="form-control" name="monto_cierre" id="monto_cierre" readonly required>
+                        <label for="monto_cierre" class="form-label">Monto de Cierre:</label>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                            <input type="number" class="form-control" name="monto_cierre" id="monto_cierre" readonly required>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger">Cerrar Caja</button>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary btn-md" data-dismiss="modal"><i class="fas fa-times-circle"></i> Cancelar</button>
+                    <button type="submit" class="btn btn-danger btn-md"><i class="fas fa-check-circle"></i> Cerrar Caja</button>
                 </div>
             </form>
         </div>
@@ -167,12 +190,112 @@
 @stop
 
 @section('js')
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
+    // Mostrar alerta de SweetAlert si existe un mensaje de error
+    @if (session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: '¡Atención!',
+            text: '{{ session('error') }}',
+            confirmButtonText: 'Aceptar',
+            timer: 5000
+        });
+    @endif
+
+    // Modal para cerrar caja
     $('#cerrarCajaModal').on('show.bs.modal', function(event) {
         const button = $(event.relatedTarget);
         const ventas = button.data('ventas');
         const modal = $(this);
         modal.find('.modal-body #monto_cierre').val(ventas);
     });
+
+    // Filtros en la tabla de cajas
+    document.getElementById('searchSucursal').addEventListener('change', filterCajas);
+    document.getElementById('searchEstado').addEventListener('change', filterCajas);
+    document.getElementById('searchFecha').addEventListener('change', filterCajas);
+
+    function filterCajas() {
+        const searchSucursal = document.getElementById('searchSucursal').value.toLowerCase();
+        const searchEstado = document.getElementById('searchEstado').value;
+        const searchFecha = document.getElementById('searchFecha').value;
+
+        document.querySelectorAll('#cajasTableBody tr').forEach(function(row) {
+            const sucursal = row.children[1].textContent.toLowerCase();
+            const estado = row.children[7].textContent.toLowerCase();
+            const fecha = row.children[3].textContent.split(' ')[0];  // Solo la parte de fecha (d/m/Y)
+
+            const sucursalMatch = searchSucursal === '' || sucursal.includes(searchSucursal);
+            const estadoMatch = searchEstado === '' || estado.includes(searchEstado.toLowerCase());
+            const fechaMatch = searchFecha === '' || fecha.split('/').reverse().join('-') === searchFecha;
+
+            row.style.display = sucursalMatch && estadoMatch && fechaMatch ? '' : 'none';
+        });
+    }
 </script>
 @stop
+
+@section('css')
+<style>
+    .modal-header {
+        border-bottom: 1px solid #f4f4f4;
+    }
+
+    .modal-content {
+        border-radius: 10px;
+        box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-body {
+        background-color: #f9f9f9;
+        padding: 20px 30px;
+    }
+
+    .modal-footer {
+        background-color: #f4f4f4;
+        padding: 15px 20px;
+        border-top: 1px solid #ddd;
+    }
+
+    .form-label {
+        font-weight: bold;
+        color: #495057;
+    }
+
+    .input-group-text {
+        background-color: #e9ecef;
+        border-right: none;
+    }
+
+    .form-control {
+        border-left: none;
+        transition: border 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .btn-md {
+        padding: 6px 12px;
+    }
+
+    .btn-close {
+        background-color: transparent;
+        border: none;
+    }
+
+    .btn-close:hover {
+        color: white;
+    }
+
+    .btn-close span {
+        font-size: 1.2rem;
+    }
+</style>
+@endsection

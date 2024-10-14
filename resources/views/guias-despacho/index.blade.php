@@ -1,5 +1,7 @@
 @extends('adminlte::page')
 
+@section('title', 'Guias de Despacho')
+
 @section('content')
 <div class="container">
     <h1>Guías de Despacho</h1>
@@ -41,6 +43,17 @@
             @endforeach
         </tbody>
     </table>
+     <!-- Sección de Paginación -->
+     <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                <p class="small text-muted">
+                    Mostrando {{ $guias->firstItem() }} a {{ $guias->lastItem() }} de {{ $guias->total() }} registros
+                </p>
+            </div>
+            <div>
+                {{ $guias->links('pagination::bootstrap-4') }} <!-- Estilo Bootstrap 4 para la paginación -->
+            </div>
+        </div>
 </div>
 @endsection
 @section('css')

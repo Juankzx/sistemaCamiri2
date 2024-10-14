@@ -70,9 +70,9 @@
                     <p class="lead">Métodos de Pago:</p>
                     <div class="form-group">
                         <label for="metodo_pago_id">Método de Pago</label>
-                        <select class="form-control" id="metodo_pago_id" name="metodo_pago_id" required onchange="toggleTransferencia()">
-                            <option value="" disabled selected>Seleccione un método de pago</option>
-                            @foreach($metodoPago as $metodo)
+                        <select class="form-control" id="metodo_pago_id" name="metodo_pago_id" required>
+                            <option value="">Seleccione un método de pago</option>
+                            @foreach ($metodosPago as $metodo)  <!-- Usar $metodosPago con el nombre correcto -->
                                 <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
                             @endforeach
                         </select>

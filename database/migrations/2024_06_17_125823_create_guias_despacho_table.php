@@ -10,7 +10,8 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    {
+{
+    if (!Schema::hasTable('guias_despacho')) {
         Schema::create('guias_despacho', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('orden_compra_id');
@@ -22,6 +23,7 @@ return new class extends Migration
             $table->foreign('orden_compra_id')->references('id')->on('ordenes_compras');
         });
     }
+}
 
     /**
      * Reverse the migrations.

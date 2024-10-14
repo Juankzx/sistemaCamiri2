@@ -25,7 +25,7 @@ class ProductoController extends Controller
      public function index(Request $request)
      {
          $productos = Producto::with(['unidadmedida', 'categoria', 'proveedor'])
-                              ->paginate(10)
+                              ->paginate(15)
                               ->withQueryString();
      
          return view('producto.index', compact('productos'))

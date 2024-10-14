@@ -1,5 +1,7 @@
 @extends('adminlte::page')
 
+@section('title', 'Bodegas')
+
 @section('content')
     <div class="container">
         <h1>Lista de Bodegas</h1>
@@ -36,6 +38,18 @@
                 @endforeach
             </tbody>
         </table>
+
+        <!-- Sección de Paginación -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                <p class="small text-muted">
+                    Mostrando {{ $bodegas->firstItem() }} a {{ $bodegas->lastItem() }} de {{ $bodegas->total() }} registros
+                </p>
+            </div>
+            <div>
+                {{ $bodegas->links('pagination::bootstrap-4') }} <!-- Estilo Bootstrap 4 para la paginación -->
+            </div>
+        </div>
     </div>
 @endsection
 
@@ -98,7 +112,7 @@
         });
 
         // Búsqueda en vivo con Fuse.js
-        const warehouses = @json($bodegas->toArray());
+        const warehouses = @json($bodegas->items()); // Usar los elementos actuales de la página
         const options = {
             keys: ['nombre'],
             threshold: 0.3

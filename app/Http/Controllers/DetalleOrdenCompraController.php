@@ -56,4 +56,3 @@ class DetalleOrdenCompraController extends Controller
         return redirect()->route('detalles.index')->with('success', 'Detalle de orden de compra eliminado con éxito.');
     }
 }
-

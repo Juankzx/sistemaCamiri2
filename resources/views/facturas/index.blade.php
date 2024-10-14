@@ -41,6 +41,17 @@
             @endforeach
         </tbody>
     </table>
+    <!-- Sección de Paginación -->
+    <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                <p class="small text-muted">
+                    Mostrando {{ $facturas->firstItem() }} a {{ $facturas->lastItem() }} de {{ $facturas->total() }} registros
+                </p>
+            </div>
+            <div>
+                {{ $facturas->links('pagination::bootstrap-4') }} <!-- Estilo Bootstrap 4 para la paginación -->
+            </div>
+        </div>
 </div>
 @endsection
 

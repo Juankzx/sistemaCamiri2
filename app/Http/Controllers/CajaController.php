@@ -14,7 +14,7 @@ class CajaController extends Controller
 {
     public function index()
     {
-        $cajas = Caja::with('sucursal', 'user')->paginate(10);
+        $cajas = Caja::with('sucursal', 'user')->paginate(15);
         $sucursales = Sucursale::all();
         $cajaAbierta = Caja::where('estado', true)->first();
 

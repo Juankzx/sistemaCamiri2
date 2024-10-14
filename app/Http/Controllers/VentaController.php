@@ -28,7 +28,7 @@ class VentaController extends Controller
 {
     // Obtén las ventas con sus relaciones
     $ventas = Venta::with(['user', 'sucursal', 'metodo_pago', 'detallesVenta.producto', 'inventarios'])
-                    ->paginate(1000)
+                    ->paginate(15)
                     ->withQueryString();
 
     // Obtén las sucursales para pasarlas a la vista

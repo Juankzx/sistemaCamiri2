@@ -10,7 +10,7 @@ class BodegaController extends Controller
 {
     public function index()
     {
-        $bodegas = Bodega::all();
+        $bodegas = Bodega::paginate(15);
         return view('bodegas.index', compact('bodegas'));
     }
 

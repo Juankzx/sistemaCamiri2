@@ -77,7 +77,9 @@ Route::resource('bodegas', App\Http\Controllers\BodegaController::class)->middle
 Route::resource('movimientos', App\Http\Controllers\MovimientoController::class)->middleware('auth');
 Route::resource('ordenes-compras', App\Http\Controllers\OrdenCompraController::class)->middleware('auth');
 Route::resource('ordenes', App\Http\Controllers\OrdenCompraController::class)->middleware('auth');
-Route::get('/ordenes-compras/entregar/{id}', [OrdenCompraController::class, 'entregar'])->name('ordenes-compras.entregar')->middleware('auth');
+Route::get('/ordenes-compras/{id}/entregar', [OrdenCompraController::class, 'entregar'])->name('ordenes-compras.entregar');
+
+
 Route::get('/api/ordenes-compra/{id}', [GuiaDespachoController::class, 'getOrdenCompraDetails']);
 
 
@@ -118,6 +120,8 @@ Route::get('/reports/inventory-summary', [ReportController::class, 'inventorySum
 Route::get('/reports/purchase-reports', [ReportController::class, 'purchaseReports'])->name('reports.purchase_reports');
 Route::get('/reports/payment-methods-report', [ReportController::class, 'paymentMethodsReport'])->name('reports.payment_methods_report');
 
+Route::get('configuracion', [ConfiguracionController::class, 'edit'])->name('configuracion.edit');
+Route::put('configuracion', [ConfiguracionController::class, 'update'])->name('configuracion.update');
 
 
 

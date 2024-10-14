@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GuiaDespacho;
 
+use App\Models\OrdenCompra;
 use App\Models\Factura;
 use App\Models\MetodosPago;
 use Illuminate\Http\Request;
@@ -12,7 +13,7 @@ class FacturaController extends Controller
 {
     public function index()
     {
-        $facturas = Factura::all();
+        $facturas = Factura::with(['guiaDespacho', 'ordenCompra'])->paginate(15); 
         return view('facturas.index', compact('facturas'));
     }
 
@@ -24,28 +25,29 @@ class FacturaController extends Controller
 
 
     public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-            'guia_despacho_id' => 'required|exists:guias_despacho,id',
-            'numero_factura' => 'required|string|unique:facturas,numero_factura',
-            'fecha_factura' => 'required|date',
-        ]);
+{
+    // Validar los datos de la factura
+    $validatedData = $request->validate([
+        'guia_despacho_id' => 'required|exists:guias_despacho,id',
+        'numero_factura' => 'required|unique:facturas,numero_factura',
+        'fecha_factura' => 'required|date',
+        'total_factura' => 'required|numeric',
+        'estado_pago' => 'required|in:pendiente,pagado',
+        'orden_compra_id' => 'required|exists:ordenes_compras,id',
+    ]);
 
-        $guiaDespacho = GuiaDespacho::with('ordenCompra.detalles')->findOrFail($validatedData['guia_despacho_id']);
-        $totalFactura = $guiaDespacho->ordenCompra->detalles->sum(function ($detalle) {
-            return $detalle->precio_compra * $detalle->cantidad;
-        });
+    // Crear la factura
+    $factura = Factura::create($validatedData);
 
-        $factura = new Factura();
-        $factura->guia_despacho_id = $validatedData['guia_despacho_id'];
-        $factura->numero_factura = $validatedData['numero_factura'];
-        $factura->fecha_factura = $validatedData['fecha_factura'];
-        $factura->total_factura = $totalFactura;
-        $factura->estado_pago = 'pendiente';  // Estado inicial
-        $factura->save();
+    // Actualizar estado de la Orden de Compra a "en_transito"
+    $ordenCompra = OrdenCompra::find($validatedData['orden_compra_id']);
+    $ordenCompra->update(['estado' => 'en_transito']);
 
-        return redirect()->route('facturas.index')->with('success', 'Factura creada exitosamente.');
-    }
+    return redirect()->route('facturas.index')->with('success', 'Factura creada y estado de la orden de compra actualizado a "en_transito".');
+}
+
+    
+
 
     public function show(Factura $factura)
     {

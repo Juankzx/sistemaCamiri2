@@ -16,13 +16,15 @@ class GuiaDespacho extends Model
         return $this->belongsTo(OrdenCompra::class, 'orden_compra_id');
     }
 
-    public function detalles()
-    {
-        return $this->hasMany(DetalleGuiaDespacho::class);
-    }
 
+    // Relación con Facturas a través de la Orden de Compra
     public function facturas()
     {
-        return $this->hasMany(Factura::class);
+        return $this->hasMany(Factura::class, 'guia_despacho_id');
+    }
+    // Relación a través de la Orden de Compra para obtener los productos
+    public function productos()
+    {
+        return $this->hasManyThrough(Producto::class, DetalleOrdenCompra::class, 'orden_compra_id', 'id', 'orden_compra_id', 'producto_id');
     }
 }

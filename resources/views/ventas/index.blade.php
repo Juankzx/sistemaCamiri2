@@ -95,10 +95,23 @@
                                 </tbody>
                             </table>
                         </div>
-                        
+       <!-- Sección de Paginación -->
+       <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                <p class="small text-muted">
+                    Mostrando {{ $ventas->firstItem() }} a {{ $ventas->lastItem() }} de {{ $ventas->total() }} registros
+                </p>
+            </div>
+            <div>
+                {{ $ventas->links('pagination::bootstrap-4') }} <!-- Estilo Bootstrap 4 para la paginación -->
+            </div>
+        </div>
                     </div>
                 </div>
             </div>
+
+              
+
         </div>
     </div>
 
@@ -108,54 +121,50 @@
 @endsection
 
 @section('js')
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const ventas = @json($ventas->items());
 
-        const fuse = new Fuse(ventas, {
-            keys: ['user.name', 'sucursal.nombre', 'metodo_pago.nombre', 'fecha'],
-            threshold: 0.3,
-        });
-
-        // Funciones de filtro similares a las que usaste en la gestión de cajas
+        // Funciones de filtro
         document.getElementById('searchUsuario').addEventListener('input', filterVentas);
         document.getElementById('searchSucursal').addEventListener('change', filterVentas);
         document.getElementById('searchMetodoPago').addEventListener('change', filterVentas);
         document.getElementById('searchFecha').addEventListener('change', filterVentas);
 
         function filterVentas() {
-            const searchUsuario = document.getElementById('searchUsuario').value.trim();
+            const searchUsuario = document.getElementById('searchUsuario').value.trim().toLowerCase();
             const searchSucursal = document.getElementById('searchSucursal').value;
             const searchMetodoPago = document.getElementById('searchMetodoPago').value;
             const searchFecha = document.getElementById('searchFecha').value;
 
             let filteredVentas = ventas;
 
+            // Filtrar por nombre de usuario
             if (searchUsuario !== '') {
-                const result = fuse.search(searchUsuario);
-                filteredVentas = result.map(r => r.item);
+                filteredVentas = filteredVentas.filter(venta => venta.user.name.toLowerCase().includes(searchUsuario));
             }
 
+            // Filtrar por sucursal
             if (searchSucursal !== '') {
                 filteredVentas = filteredVentas.filter(venta => venta.sucursal.id == searchSucursal);
             }
 
+            // Filtrar por método de pago
             if (searchMetodoPago !== '') {
                 filteredVentas = filteredVentas.filter(venta => venta.metodo_pago.id == searchMetodoPago);
             }
 
+            // Filtrar por fecha
             if (searchFecha !== '') {
                 filteredVentas = filteredVentas.filter(venta => venta.fecha.startsWith(searchFecha));
             }
 
             displayVentas(filteredVentas);
         }
-
-        function printReceipt() {
-    const ventaId = document.getElementById('printReceiptButton').getAttribute('data-venta-id');
-    window.location.href = `/ventas/${ventaId}/print`; // Cambia esto para redirigir a la página de impresión de boleta
-}
-
 
         function displayVentas(filteredVentas) {
             const tableBody = document.querySelector('#ventasTableBody');

@@ -44,6 +44,11 @@ class OrdenCompra extends Model
         return $this->hasMany(GuiaDespacho::class);
     }
 
+    public function facturas()
+{
+    return $this->hasMany(Factura::class, 'orden_compra_id');
+}
+
     protected static function boot()
     {
         parent::boot();

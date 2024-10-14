@@ -5,11 +5,11 @@
         /* Estilos específicos para impresoras de 80 mm */
         body {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 20px;
+            font-size: 14px; /* Tamaño de fuente ajustado para impresoras térmicas */
             margin: 0;
             padding: 0;
-            width: 100mm;
-            max-width: 100mm;
+            width: 80mm; /* Ancho ajustado para impresoras de 80mm */
+            max-width: 80mm;
         }
         .container {
             padding: 0;
@@ -37,11 +37,18 @@
             border-bottom: 1px solid #000;
             padding: 10px 5mm;
         }
-        .total {
-            text-align: left;
+        .items p {
+            margin: 5px 0;
+        }
+        .totals {
             margin-top: 10px;
-            font-weight: bold;
+            border-top: 1px solid #000;
+            padding-top: 10px;
+            text-align: left;
             padding: 0 5mm;
+        }
+        .totals p {
+            margin: 5px 0;
         }
         .qr-code {
             text-align: center;
@@ -50,13 +57,6 @@
         .qr-code img {
             width: 30mm;
             height: 30mm;
-        }
-        .totals {
-            margin-top: 10px;
-            border-top: 1px solid #000;
-            padding-top: 10px;
-            text-align: left;
-            padding: 0 5mm;
         }
     </style>
 </head>
@@ -67,20 +67,22 @@
             <p>N° Venta: {{ $venta->id }}</p>
             <p>Sucursal: {{ $venta->sucursal->nombre }}</p>
             <p>Vendedor: {{ $venta->user->name }}</p>
-            <p>Fecha: {{ $venta->fecha }}</p>
-            
+            <p>Fecha: {{ \Carbon\Carbon::parse($venta->fecha)->format('d/m/Y H:i:s') }}</p>
         </div>
+
         <div class="items">
             <p><strong>Productos:</strong></p>
             @foreach($venta->detallesVenta as $detalle)
                 <p>{{ $detalle->producto->nombre }}<br>{{ $detalle->cantidad }} x ${{ number_format($detalle->precio_unitario, 0) }}</p>
             @endforeach
         </div>
+
         <div class="totals">
             <p>Subtotal: ${{ number_format($venta->total / 1.19, 0) }}</p>
             <p>IVA (19%): ${{ number_format($venta->total - ($venta->total / 1.19), 0) }}</p>
             <p><strong>Total: ${{ number_format($venta->total, 0) }}</strong></p>
         </div>
+
         <div class="qr-code">
             <img src="{{ $qrCodeDataUri }}" alt="QR Code">
             <p>Escanea para ver online</p>

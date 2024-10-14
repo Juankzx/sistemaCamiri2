@@ -13,10 +13,13 @@ use Illuminate\View\View;
 class InventarioController extends Controller
 {
     // Muestra el listado del inventario
-    public function index(Request $request): View
+// Muestra el listado del inventario
+public function index(Request $request): View
 {
-    $query = Inventario::with(['producto', 'sucursal', 'bodega']);
-    
+    // Obtener la consulta base del inventario con las relaciones necesarias
+    $query = Inventario::with(['producto.unidadMedida', 'sucursal', 'bodega']);
+
+    // Aplicar filtro de búsqueda si se especifica
     if ($request->filled('search')) {
         $query->whereHas('producto', function ($q) use ($request) {
             $q->where('nombre', 'like', '%' . $request->search . '%')
@@ -27,17 +30,25 @@ class InventarioController extends Controller
         });
     }
 
+    // Filtrar por sucursal si se proporciona
     if ($request->filled('sucursal')) {
         $query->where('sucursal_id', $request->sucursal);
     }
 
-    $inventarios = $query->paginate(10); // Mantener paginación para la vista
-    $todosInventarios = Inventario::with(['producto', 'sucursal', 'bodega'])->get(); // Obtener todos los inventarios para búsqueda
+    // Obtener resultados con paginación y relaciones
+    $inventarios = $query->paginate(15); // Cambiar el número según la cantidad de elementos por página que deseas
 
+    // Obtener todos los inventarios para búsqueda adicional en la vista (si es necesario)
+    $todosInventarios = Inventario::with(['producto', 'sucursal', 'bodega'])->get();
+
+    // Obtener las sucursales y bodegas disponibles para el filtro
     $sucursales = Sucursale::all();
+    $bodegas = Bodega::all();
 
-    return view('inventarios.index', compact('inventarios', 'sucursales', 'todosInventarios'));
+    // Retornar la vista con todas las variables necesarias
+    return view('inventarios.index', compact('inventarios', 'sucursales', 'todosInventarios', 'bodegas'));
 }
+
 
     
 

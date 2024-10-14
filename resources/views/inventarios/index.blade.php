@@ -16,10 +16,27 @@
 
     <div class="container">
         <!-- Campo de búsqueda en vivo -->
-        <div class="form-group">
-            <label for="search">Buscar:</label>
-            <input type="text" id="inventorySearch" class="form-control" placeholder="Nombre de producto, bodega o sucursal">
-        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <label for="search">Buscar:</label>
+                <input type="text" id="inventorySearch" class="form-control" placeholder="Nombre de producto, bodega o sucursal">
+            </div>
+            <div class="col-md-4">
+                <label for="filterLocation">Filtrar por Sucursal o Bodega:</label>
+                <select id="filterLocation" class="form-control">
+                    <option value="">Todas las Sucursales y Bodegas</option>
+                    <optgroup label="Sucursales">
+                        @foreach($sucursales as $sucursal)
+                            <option value="sucursal-{{ $sucursal->id }}">Sucursal: {{ $sucursal->nombre }}</option>
+                        @endforeach
+                    </optgroup>
+                    <optgroup label="Bodegas">
+                        @foreach($bodegas as $bodega)
+                            <option value="bodega-{{ $bodega->id }}">Bodega: {{ $bodega->nombre }}</option>
+                        @endforeach
+                    </optgroup>
+                </select>
+            </div>
         
         <!-- Tabla responsive -->
         <div class="table-responsive">
@@ -38,7 +55,7 @@
                 </thead>
                 <tbody id="inventoryTableBody">
                     @foreach($inventarios as $inventario)
-                    <tr>
+                    <tr data-bodega="{{ $inventario->bodega ? $inventario->bodega->id : '' }}" data-sucursal="{{ $inventario->sucursal ? $inventario->sucursal->id : '' }}">
                         <td>{{ $inventario->producto->nombre }}</td>
                         <td>{{ $inventario->bodega ? $inventario->bodega->nombre : 'N/A' }}</td>
                         <td>{{ $inventario->sucursal ? $inventario->sucursal->nombre : 'N/A' }}</td> <!-- Mostrar la sucursal correctamente -->
@@ -103,6 +120,19 @@
                     @endforeach
                 </tbody>
             </table>
+
+             <!-- Sección de Paginación -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                <p class="small text-muted">
+                    Mostrando {{ $inventarios->firstItem() }} a {{ $inventarios->lastItem() }} de {{ $inventarios->total() }} registros
+                </p>
+            </div>
+            <div>
+                {{ $inventarios->links('pagination::bootstrap-4') }} <!-- Estilo Bootstrap 4 para la paginación -->
+            </div>
+        </div>
+
         </div>
     </div>
 
@@ -117,7 +147,9 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> 
     <!-- Script para manejar los modales y enviar el formulario al controlador -->
     <script>
-        // Cuando se abre el modal de incrementar
+       
+       
+       // Cuando se abre el modal de incrementar
         $('#incrementarModal').on('show.bs.modal', function(event) {
             var button = $(event.relatedTarget); // Elemento que disparó el modal
             var inventarioId = button.data('id'); // Obtener el ID del inventario
@@ -253,5 +285,40 @@ document.querySelectorAll('.delete-btn').forEach(button => {
             showConfirmButton: false
         });
     @endif
+// Filtro de búsqueda por sucursal o bodega en un solo select
+document.getElementById('inventorySearch').addEventListener('input', filterInventories);
+    document.getElementById('filterLocation').addEventListener('change', filterInventories);
+
+    function filterInventories() {
+        const searchValue = document.getElementById('inventorySearch').value.toLowerCase();
+        const locationValue = document.getElementById('filterLocation').value;
+
+        const rows = document.querySelectorAll('#inventoryTableBody tr');
+
+        rows.forEach(row => {
+            const productName = row.children[0].textContent.toLowerCase();
+            const bodega = row.getAttribute('data-bodega');
+            const sucursal = row.getAttribute('data-sucursal');
+
+            const matchesSearch = productName.includes(searchValue);
+            let matchesLocation = true;
+
+            // Verificar si se ha seleccionado una bodega o sucursal
+            if (locationValue) {
+                const [type, id] = locationValue.split('-');
+                if (type === 'bodega') {
+                    matchesLocation = bodega === id;
+                } else if (type === 'sucursal') {
+                    matchesLocation = sucursal === id;
+                }
+            }
+
+            if (matchesSearch && matchesLocation) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
     </script>
 @stop

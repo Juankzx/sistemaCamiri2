@@ -79,32 +79,33 @@
 @section('js')
 <script>
     document.getElementById('orden_compra_id').addEventListener('change', function() {
-        var ordenCompraId = this.value;
-        fetch('/api/ordenes-compra/' + ordenCompraId)
-            .then(response => response.json())
-            .then(data => {
-                var tbody = document.querySelector('#detalles-table tbody');
-                tbody.innerHTML = '';
-                data.detalles.forEach((detalle, index) => {
-                    var row = `<tr>
-                        <td>
-                            <input type="hidden" name="detalles[${index}][producto_id]" value="${detalle.producto.id}">
-                            ${detalle.producto.nombre}
-                        </td>
-                        <td>
-                            <input type="number" class="form-control" name="detalles[${index}][cantidad]" value="${detalle.cantidad}" required>
-                        </td>
-                        <td>
-                            <input type="number" step="0.01" class="form-control" name="detalles[${index}][precio_compra]" value="${detalle.precio_compra}" required>
-                        </td>
-                        <td>
-                            <input type="number" step="0.01" class="form-control" name="detalles[${index}][subtotal]" value="${(detalle.cantidad * detalle.precio_compra).toFixed(2)}" readonly>
-                        </td>
-                    </tr>`;
-                    tbody.insertAdjacentHTML('beforeend', row);
-                });
+    var ordenCompraId = this.value;
+    fetch('/api/ordenes-compra/' + ordenCompraId)
+        .then(response => response.json())
+        .then(data => {
+            var tbody = document.querySelector('#detalles-table tbody');
+            tbody.innerHTML = '';
+            data.detalles.forEach((detalle, index) => {
+                var row = `<tr>
+                    <td>
+                        <input type="hidden" name="detalles[${index}][producto_id]" value="${detalle.producto.id}">
+                        ${detalle.producto.nombre}
+                    </td>
+                    <td>
+                        <input type="number" class="form-control" name="detalles[${index}][cantidad]" value="${detalle.cantidad}" readonly>
+                    </td>
+                    <td>
+                        <input type="number" step="0.01" class="form-control" name="detalles[${index}][precio_compra]" value="${detalle.precio_compra}" readonly>
+                    </td>
+                    <td>
+                        <input type="number" step="0.01" class="form-control" name="detalles[${index}][subtotal]" value="${(detalle.cantidad * detalle.precio_compra).toFixed(2)}" readonly>
+                    </td>
+                </tr>`;
+                tbody.insertAdjacentHTML('beforeend', row);
             });
-    });
+        });
+});
+
 
     function addDetail() {
         var tbody = document.querySelector('#detalles-table tbody');

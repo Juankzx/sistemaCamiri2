@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('ventas', function (Blueprint $table) {
-            $table->unsignedBigInteger('caja_id')->nullable()->after('id'); // Añadir la columna caja_id
-            $table->foreign('caja_id')->references('id')->on('cajas')->onDelete('cascade'); // Definir la relación con la tabla cajas
+            if (!Schema::hasColumn('ventas', 'caja_id')) {
+                $table->unsignedBigInteger('caja_id')->nullable()->after('id');
+            }
         });
-        
     }
 
     /**
