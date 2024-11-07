@@ -11,19 +11,19 @@ return new class extends Migration
      */
     public function up(): void
 {
-    if (!Schema::hasTable('guias_despacho')) {
-        Schema::create('guias_despacho', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('orden_compra_id');
-            $table->string('numero_guia')->unique();
-            $table->timestamp('fecha_entrega');
-            $table->enum('estado', ['emitida', 'en_transito', 'entregada'])->default('emitida');
-            $table->timestamps();
+    Schema::create('guias_despacho', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedBigInteger('orden_compra_id')->nullable();
+        $table->string('numero_guia')->unique()->nullable();
+        $table->timestamp('fecha_entrega')->nullable();
+        $table->enum('estado', ['emitida', 'en_transito', 'entregada'])->default('emitida');
+        $table->integer('total')->nullable();  // Total de los productos entregados
+        $table->timestamps();
 
-            $table->foreign('orden_compra_id')->references('id')->on('ordenes_compras');
+        // Relación con orden de compra
+        $table->foreign('orden_compra_id')->references('id')->on('ordenes_compras')->onDelete('cascade');
         });
     }
-}
 
     /**
      * Reverse the migrations.

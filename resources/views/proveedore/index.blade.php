@@ -42,9 +42,9 @@
                                     </tr>
                                 </thead>
                                 <tbody id="providerTableBody">
-                                    @foreach ($proveedores as $proveedore)
+                                    @foreach ($proveedores as $index => $proveedore)
                                         <tr>
-                                            <td>{{ ++$i }}</td>
+                                            <td>{{ $proveedores->firstItem() + $index }}</td>
                                             <td>{{ $proveedore->nombre }}</td>
                                             <td>{{ $proveedore->rut }}</td>
                                             <td>{{ $proveedore->direccion }}</td>
@@ -59,10 +59,22 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                            <!-- Paginación e información de registros -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            <p class="small text-muted">
+                                Mostrando {{ $proveedores->firstItem() }} a {{ $proveedores->lastItem() }} de {{ $proveedores->total() }} registros
+                            </p>
+                        </div>
+                        <div>
+                            {{ $proveedores->links('pagination::bootstrap-4') }}
                         </div>
                     </div>
+                        </div>
+                    </div>
+
+                    
                 </div>
-                {!! $proveedores->withQueryString()->links() !!}
             </div>
         </div>
     </div>
@@ -79,37 +91,29 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Cargamos los proveedores desde la variable PHP en un array de objetos JS
         const providers = @json($proveedores->toArray());
 
-        // Configuración de Fuse.js
         const options = {
-            keys: ['nombre'], // Solo buscamos en el nombre de los proveedores
-            threshold: 0.3 // Sensibilidad de la búsqueda
+            keys: ['nombre'],
+            threshold: 0.3
         };
 
         const fuse = new Fuse(providers.data, options);
 
-        // Manejador del evento input para búsqueda por nombre
         document.getElementById('searchName').addEventListener('input', function(e) {
-            const searchText = e.target.value.trim(); // Elimina espacios en blanco
+            const searchText = e.target.value.trim();
             filterResults(searchText);
         });
 
-        // Función para filtrar los resultados en función del nombre
         function filterResults(searchText) {
             let filteredProviders = providers.data;
-
-            // Si hay texto en el campo de búsqueda, utilizamos Fuse.js para filtrar
             if (searchText !== '') {
                 const result = fuse.search(searchText);
                 filteredProviders = result.map(r => r.item);
             }
-
             displayProviders(filteredProviders);
         }
 
-        // Función para mostrar los proveedores filtrados o completos
         function displayProviders(filteredProviders) {
             const tableBody = document.querySelector('#providerTableBody');
             tableBody.innerHTML = '';
@@ -138,10 +142,8 @@
             }
         }
 
-        // Mostrar todos los proveedores inicialmente
         displayProviders(providers.data);
 
-        // SweetAlert para la confirmación de eliminación
         document.querySelectorAll('.delete-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const id = this.getAttribute('data-id');
@@ -166,7 +168,6 @@
             });
         });
 
-        // SweetAlert para mostrar mensajes de éxito o error
         @if(session('success'))
             Swal.fire({
                 icon: 'success',

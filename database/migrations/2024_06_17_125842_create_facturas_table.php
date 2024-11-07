@@ -12,15 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('facturas', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('guia_despacho_id');
-            $table->string('numero_factura')->unique();
-            $table->timestamp('fecha_factura');
-            $table->integer('total_factura');
-            $table->enum('estado_pago', ['pendiente', 'pagado'])->default('pendiente');
-            $table->timestamps();
-
-            $table->foreign('guia_despacho_id')->references('id')->on('guias_despacho');
+                $table->id();
+                $table->unsignedBigInteger('guia_despacho_id')->nullable();
+                $table->string('numero_factura')->unique()->nullable();
+                $table->integer('monto_total')->nullable();
+                $table->timestamp('fecha_emision')->nullable();
+                $table->enum('estado_pago', ['pendiente', 'pagado'])->default('pendiente');
+                $table->timestamps();
+    
+                // Relación con guías de despacho
+                $table->foreign('guia_despacho_id')->references('id')->on('guias_despacho')->onDelete('cascade');
         });
     }
 

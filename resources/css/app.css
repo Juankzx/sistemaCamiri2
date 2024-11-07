@@ -1,0 +1,16 @@
+.nav-treeview > .nav-item > .nav-link {
+    padding-left: 25px; /* Aumenta el padding para mayor indentación */
+}
+
+.nav-treeview > .nav-item > .nav-link.active {
+    font-weight: bold; /* Hace que el ítem activo sea más visible */
+    background-color: #f8f9fa; /* Color de fondo más claro */
+}
+.sidebar .nav-treeview {
+    margin-left: 10px; /* Ajustar la indentación del submenú */
+    box-shadow: none; /* Remueve sombras conflictivas */
+}
+
+.sidebar .nav-item .nav-link {
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2); /* Aplica sombra consistente */
+}

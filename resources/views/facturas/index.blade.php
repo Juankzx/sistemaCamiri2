@@ -22,7 +22,7 @@
                 <td>{{ $factura->numero_factura }}</td>
                 <td>{{ \Carbon\Carbon::parse($factura->fecha_factura)->format('d/m/Y') }}</td>
 
-                <td>${{ $factura->total_factura }}</td>
+                <td>${{ $factura->monto_total }}</td>
                         <td class="text-center">
                             <span class="badge {{ $factura->estado_pago == 'pendiente' ? 'bg-danger' : 'bg-success' }}">
                                 {{ $factura->estado_pago }}

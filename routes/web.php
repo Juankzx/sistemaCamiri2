@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\SucursaleController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\BodegaController;
 use App\Http\Controllers\VentaController;
 use App\Http\Controllers\OrdenCompraController;
 use App\Http\Controllers\DetalleOrdenCompraController;
+use App\Http\Controllers\DetalleGuiaDespachoController;
 use App\Http\Controllers\GuiaDespachoController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\CajaController;
@@ -19,9 +21,11 @@ use App\Http\Controllers\MetodoPagoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\ConfiguracionController;
 use ConsoleTVs\Charts\Facades\Charts;
 use Chartisan\PHP\Chartisan;
+use App\Http\Controllers\HomeController;
 
 
 // Ruta pública de login
@@ -42,14 +46,15 @@ Route::post('register', [RegisterController::class, 'register'])->middleware('gu
 // Rutas protegidas
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+    Route::get('/home', [HomeController::class, 'index'])->name('home');
 
     Route::resource('productos', ProductoController::class);
     Route::resource('inventarios', InventarioController::class);
 });
 
 
-Route::resource('home', App\Http\Controllers\HomeController::class)->middleware('auth');
+
+
 Route::resource('categorias', App\Http\Controllers\CategoriaController::class)->middleware('auth');
 Route::resource('proveedores', App\Http\Controllers\ProveedoreController::class)->middleware('auth');
 Route::resource('ivas', App\Http\Controllers\IvaController::class)->middleware('auth');
@@ -73,7 +78,6 @@ Route::get('/ventas/{id}/print', [VentaController::class, 'print'])->name('venta
 
 
 Route::resource('bodegas', App\Http\Controllers\BodegaController::class)->middleware('auth');
-
 Route::resource('movimientos', App\Http\Controllers\MovimientoController::class)->middleware('auth');
 Route::resource('ordenes-compras', App\Http\Controllers\OrdenCompraController::class)->middleware('auth');
 Route::resource('ordenes', App\Http\Controllers\OrdenCompraController::class)->middleware('auth');
@@ -87,6 +91,8 @@ Route::resource('detalles-ordenes-compras', App\Http\Controllers\DetalleOrdenCom
 Route::resource('guias-despacho', App\Http\Controllers\GuiaDespachoController::class)->middleware('auth');
 // Ruta API para obtener detalles de la guía de despacho
 Route::get('/api/guias-despacho/{id}/detalles', [GuiaDespachoController::class, 'getDetalles']);
+Route::get('api/guias-despacho/{id}', [FacturaController::class, 'getDetalles']);
+
 Route::get('guias-despacho/{id}/detalles', [GuiaDespachoController::class, 'getDetalles']);
 
 
@@ -94,9 +100,11 @@ Route::get('guias-despacho/{id}/detalles', [GuiaDespachoController::class, 'getD
 Route::resource('facturas', App\Http\Controllers\FacturaController::class)->middleware('auth');
 Route::resource('pagos', App\Http\Controllers\PagoController::class)->middleware('auth');
 Route::get('pagos/create', [PagoController::class, 'create'])->name('pagos.create');
+// Ruta API para consultar detalles de la factura (a través de PagoController)
+Route::get('/api/pagos/{id}/detalles', [PagoController::class, 'getFacturaDetalles']);
+
+// Ruta regular para obtener detalles de la factura a través del FacturaController (si es necesario)
 Route::get('/api/facturas/{id}/detalles', [FacturaController::class, 'getDetalles']);
-
-
 
 Route::resource('unidades', App\Http\Controllers\UnidadMedidaController::class)->middleware('auth');
 Route::get('ordenes-compras/{orden}', [OrdenCompraController::class, 'show'])->name('ordenes-compras.show');
@@ -114,16 +122,21 @@ Route::get('/productos/sucursal/{sucursal}', [ProductoController::class, 'getPro
 // Ruta para buscar productos
 Route::get('/productos/search', [ProductoController::class, 'search'])->name('productos.search');
 
-Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-Route::get('/reports/sales-over-time', [ReportController::class, 'salesOverTime'])->name('reports.sales_over_time');
-Route::get('/reports/inventory-summary', [ReportController::class, 'inventorySummary'])->name('reports.inventory_summary');
-Route::get('/reports/purchase-reports', [ReportController::class, 'purchaseReports'])->name('reports.purchase_reports');
-Route::get('/reports/payment-methods-report', [ReportController::class, 'paymentMethodsReport'])->name('reports.payment_methods_report');
-
-Route::get('configuracion', [ConfiguracionController::class, 'edit'])->name('configuracion.edit');
-Route::put('configuracion', [ConfiguracionController::class, 'update'])->name('configuracion.update');
+Route::prefix('reportes')->middleware('auth')->group(function () {
+    Route::get('/ventas', [ReporteController::class, 'ventas'])->name('reportes.ventas');
+    Route::get('/inventario', [ReporteController::class, 'inventario'])->name('reportes.inventario');
+    Route::get('/compras', [ReporteController::class, 'compras'])->name('reportes.compras');
+    Route::get('/financieros', [ReporteController::class, 'financieros'])->name('reportes.financieros');
+});
 
 
+Route::get('/configuracion', [ConfiguracionController::class, 'edit'])->name('configuracion.edit');
+Route::put('/configuracion', [ConfiguracionController::class, 'update'])->name('configuracion.update');
+
+Route::post('/inventarios/store-multiple', [InventarioController::class, 'storeMultiple'])->name('inventarios.storeMultiple');
+Route::post('/inventarios/check-producto', [InventarioController::class, 'checkProducto'])->name('inventarios.checkProducto');
+
+Route::resource('users', App\Http\Controllers\UserController::class)->middleware('auth');
 
 
 

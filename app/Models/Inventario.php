@@ -38,7 +38,7 @@ class Inventario extends Model
     public function producto()
     {
         //return $this->belongsTo(\App\Models\Producto::class, 'producto_id', 'id');
-        return $this->belongsTo(Producto::class);
+        return $this->belongsTo(Producto::class, 'producto_id');
     }
     
     /**
@@ -56,5 +56,26 @@ class Inventario extends Model
         return $this->belongsTo(Bodega::class);
     }
     
+
+  // En el modelo Inventario
+    public static function addStock($productoId, $cantidad, $bodegaId)
+    {
+        // Busca la entrada de inventario para el producto en la bodega general (bodegaId)
+        $inventario = self::where('producto_id', $productoId)->where('bodega_id', $bodegaId)->first();
+
+        if ($inventario) {
+            // Si ya existe, suma la cantidad al stock existente
+            $inventario->cantidad += $cantidad;
+            $inventario->save();
+        } else {
+            // Si no existe, crea una nueva entrada de inventario para este producto en la bodega general
+            self::create([
+                'producto_id' => $productoId,
+                'bodega_id' => $bodegaId,
+                'cantidad' => $cantidad,
+            ]);
+        }
+    }
+
     
 }

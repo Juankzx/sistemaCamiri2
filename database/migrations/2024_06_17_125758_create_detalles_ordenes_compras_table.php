@@ -15,10 +15,12 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('orden_compra_id');
             $table->unsignedBigInteger('producto_id');
-            $table->integer('cantidad');
-            $table->integer('precio_compra');
+            $table->integer('cantidad')->nullable(); // Cantidad Solicitada
+            $table->integer('precio_compra')->nullable(); // Se puede agregar más tarde en la Guía de Despacho
+            $table->integer('subtotal')->nullable();
             $table->timestamps();
 
+            // Relación con ordenes de compra y productos
             $table->foreign('orden_compra_id')->references('id')->on('ordenes_compras')->onDelete('cascade');
             $table->foreign('producto_id')->references('id')->on('productos')->onDelete('cascade');
         });

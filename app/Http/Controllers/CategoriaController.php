@@ -16,7 +16,7 @@ class CategoriaController extends Controller
      */
     public function index(Request $request): View
     {
-        $categorias = Categoria::paginate();
+        $categorias = Categoria::where('estado', true)->paginate();
 
         return view('categoria.index', compact('categorias'))
             ->with('i', ($request->input('page', 1) - 1) * $categorias->perPage());
@@ -41,7 +41,6 @@ class CategoriaController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:255|unique:categorias,nombre',
             'descripcion' => 'nullable|string|max:255',
-            'estado' => 'required|boolean',
         ], [
             'nombre.unique' => 'El nombre de la categoría ya existe. Por favor, elija un nombre diferente.',
         ]);
@@ -95,9 +94,12 @@ class CategoriaController extends Controller
 
     public function destroy($id): RedirectResponse
     {
-        Categoria::find($id)->delete();
+        // Actualizar el estado en lugar de eliminar físicamente
+        $categoria = Categoria::find($id);
+        $categoria->estado = false;
+        $categoria->save();
 
         return Redirect::route('categorias.index')
-            ->with('success', 'Categoria deleted successfully');
+            ->with('success', 'Categoria borrada exitosamente');
     }
 }

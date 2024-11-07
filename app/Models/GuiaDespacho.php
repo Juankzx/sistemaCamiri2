@@ -9,12 +9,24 @@ class GuiaDespacho extends Model
 
 {
     protected $table = 'guias_despacho';
-    protected $fillable = ['orden_compra_id', 'numero_guia', 'fecha_entrega', 'estado'];
+    protected $fillable = [
+    'orden_compra_id', 
+    'numero_guia', 
+    'fecha_entrega', 
+    'estado',
+    'total'];
 
     public function ordenCompra()
     {
         return $this->belongsTo(OrdenCompra::class, 'orden_compra_id');
     }
+
+
+    // Relación con Detalles de la Guía de Despacho
+public function detallesGuiaDespacho()
+{
+    return $this->hasMany(DetalleGuiaDespacho::class);
+}
 
 
     // Relación con Facturas a través de la Orden de Compra
@@ -26,5 +38,12 @@ class GuiaDespacho extends Model
     public function productos()
     {
         return $this->hasManyThrough(Producto::class, DetalleOrdenCompra::class, 'orden_compra_id', 'id', 'orden_compra_id', 'producto_id');
+    }
+   
+    public function updateGeneralWarehouseStock()
+    {
+        foreach ($this->detallesGuiaDespacho as $detalle) {
+            Inventario::addStock($detalle->producto_id, $detalle->cantidad_entregada);
+        }
     }
 }

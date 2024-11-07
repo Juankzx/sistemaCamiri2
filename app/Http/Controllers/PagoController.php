@@ -5,21 +5,30 @@ namespace App\Http\Controllers;
 use App\Models\Pago;
 use App\Models\Factura;
 use App\Models\MetodosPago;
+use App\Models\DetalleGuiaDespachoPago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PagoController extends Controller
 {
     public function index()
-    {
-        $pagos = Pago::paginate(15);
-        $metodoPago = MetodosPago::all();
-        return view('pagos.index', compact('pagos', 'metodoPago'));
-    }
+{
+    // Ordenar los pagos por la fecha de creación en orden descendente
+    $pagos = Pago::orderBy('created_at', 'desc') // Ordenar por 'created_at'
+                 ->paginate(15);
+
+    // Obtener todos los métodos de pago
+    $metodoPago = MetodosPago::all();
+
+    // Retornar la vista con los datos
+    return view('pagos.index', compact('pagos', 'metodoPago'));
+}
 
     public function create()
     {
-        $facturas = Factura::with('guiaDespacho.ordenCompra.detalles.producto', 'guiaDespacho.ordenCompra.proveedor')->get();
+        $facturas = Factura::with('guiaDespacho.ordenCompra.detalles.producto', 'guiaDespacho.ordenCompra.proveedor')
+                       ->whereIn('estado_pago', ['pendiente', 'en_proceso'])
+                       ->get();
         $metodosPago = MetodosPago::all();
 
         return view('pagos.create', compact('facturas', 'metodosPago'));
@@ -27,52 +36,72 @@ class PagoController extends Controller
 
     public function store(Request $request)
 {
-    // Validación de los datos de pago
+    // Validación de datos
     $validatedData = $request->validate([
         'factura_id' => 'required|exists:facturas,id',
         'monto' => 'required|numeric|min:0.01',
         'fecha_pago' => 'required|date',
         'estado_pago' => 'required|in:pendiente,pagado',
-        'metodo_pago_id' => 'required|exists:metodos_pagos,id',  // Asegurar que el método de pago esté presente
+        'metodo_pago_id' => 'required|exists:metodos_pagos,id',
+        'numero_transferencia' => 'nullable|string|max:255'
     ]);
 
-    // Crear el registro de pago con los datos validados
+    // Crear el pago
     $pago = Pago::create([
         'factura_id' => $validatedData['factura_id'],
         'monto' => $validatedData['monto'],
         'fecha_pago' => $validatedData['fecha_pago'],
         'estado_pago' => $validatedData['estado_pago'],
-        'metodo_pago_id' => $validatedData['metodo_pago_id'],  // Asignar el método de pago correcto
+        'metodo_pago_id' => $validatedData['metodo_pago_id'],
+        'numero_transferencia' => $validatedData['numero_transferencia'] ?? null,
     ]);
 
-    // Obtener la factura y actualizar el estado a pagado si corresponde
+    // Actualizar estado de la factura
     $factura = Factura::find($validatedData['factura_id']);
     $factura->update(['estado_pago' => $validatedData['estado_pago']]);
 
-    // Verificar si todas las facturas de la orden de compra están pagadas
-    $ordenCompra = $factura->ordenCompra;
+    // Obtener la guía de despacho asociada a la factura
+    $guiaDespacho = $factura->guiaDespacho;
+    if ($guiaDespacho) {
+        // Obtener la orden de compra asociada a la guía de despacho
+        $ordenCompra = $guiaDespacho->ordenCompra;
 
-    // Comprobar si la orden de compra y sus facturas están pagadas
-    if ($ordenCompra) {
-        $todasFacturasPagadas = $ordenCompra->facturas->every(function ($factura) {
-            return $factura->estado_pago === 'pagado';
-        });
+        if ($ordenCompra) {
+            // Cargar las facturas de la orden de compra como colección
+            $facturas = $ordenCompra->facturas;
 
-        // Si todas las facturas están pagadas, actualizar estado de la orden de compra y guías de despacho
-        if ($todasFacturasPagadas) {
-            $ordenCompra->update(['estado' => 'entregado']);
+            // Verificar si todas las facturas de la colección están pagadas
+            $todasFacturasPagadas = $facturas->every(function ($factura) {
+                return $factura->estado_pago === 'pagado';
+            });
 
-            foreach ($ordenCompra->guiasDespacho as $guia) {
-                $guia->update(['estado' => 'entregada']);
+            // Si todas las facturas están pagadas, actualizar la orden y las guías
+            if ($todasFacturasPagadas) {
+                $ordenCompra->update(['estado' => 'entregado']);
+
+                // Cargar guías de despacho y verificar que no sea null antes de iterar
+                $ordenCompra->load('guiasDespacho'); // Asegura que la relación esté cargada
+                if ($ordenCompra->guiasDespacho) {
+                    foreach ($ordenCompra->guiasDespacho as $guia) {
+                        $guia->update(['estado' => 'entregada']);
+                    }
+                }
             }
         }
     }
 
     return redirect()->route('pagos.index')->with('success', 'Pago registrado y estado de la orden de compra actualizado.');
 }
+  
 
+    public function getFacturaDetalles($id)
+{
+    $factura = Factura::with('guiaDespacho.detallesGuiaDespacho.producto', 'guiaDespacho.ordenCompra.proveedor')
+                      ->findOrFail($id);
 
-    
+    return response()->json($factura);
+}
+
 
     public function show(Pago $pago)
     {

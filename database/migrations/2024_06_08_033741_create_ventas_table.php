@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('ventas', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('caja_id')->nullable(); // Agregar caja_id
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('sucursal_id');
             $table->unsignedBigInteger('metodo_pago_id');
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('sucursal_id')->references('id')->on('sucursales')->onDelete('cascade');
             $table->foreign('metodo_pago_id')->references('id')->on('metodos_pagos')->onDelete('cascade');
+            $table->foreign('caja_id')->references('id')->on('cajas')->onDelete('set null'); // Agregar la clave foránea de caja_id
         });
     }
 

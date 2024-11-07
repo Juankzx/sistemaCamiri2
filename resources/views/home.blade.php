@@ -3,239 +3,216 @@
 @section('title', 'Inicio')
 
 @section('content_header')
-    <h1>Inicio</h1>
+    <h1>Dashboard</h1>
 @stop
 
 @section('content')
+<div class="row mb-4">
+    <div class="col-md-4">
+        <form action="{{ route('home') }}" method="GET">
+            <div class="form-group">
+                <label for="sucursal_id">Seleccionar Sucursal</label>
+                <select name="sucursal_id" id="sucursal_id" class="form-control" onchange="this.form.submit()">
+                    @foreach($sucursales as $sucursal)
+                        <option value="{{ $sucursal->id }}" {{ $sucursal->id == $sucursalId ? 'selected' : '' }}>
+                            {{ $sucursal->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="row">
-    <!-- Tarjeta de información -->
     <div class="col-lg-3 col-6">
         <div class="small-box bg-info">
             <div class="inner">
-                <h3>150</h3>
-                <p>New Orders</p>
+                <h3>${{ number_format($ventasHoy, 0, ',', '.') }}</h3>
+                <p>Ventas Hoy</p>
             </div>
             <div class="icon">
-                <i class="fas fa-shopping-cart"></i>
+                <i class="fas fa-dollar-sign"></i>
             </div>
-            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
-
-    <!-- Tarjeta de información -->
     <div class="col-lg-3 col-6">
         <div class="small-box bg-success">
             <div class="inner">
-                <h3>53<sup style="font-size: 20px">%</sup></h3>
-                <p>Bounce Rate</p>
+                <h3>${{ number_format($ventasMes, 0, ',', '.') }}</h3>
+                <p>Ventas del Mes</p>
             </div>
             <div class="icon">
                 <i class="fas fa-chart-line"></i>
             </div>
-            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
-
-    <!-- Tarjeta de información -->
     <div class="col-lg-3 col-6">
         <div class="small-box bg-warning">
             <div class="inner">
-                <h3>44</h3>
-                <p>User Registrations</p>
+                <h3>${{ number_format($comprasMes, 0, ',', '.') }}</h3>
+                <p>Compras del Mes</p>
             </div>
             <div class="icon">
-                <i class="fas fa-user-plus"></i>
+                <i class="fas fa-shopping-cart"></i>
             </div>
-            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
-
-    <!-- Tarjeta de información -->
     <div class="col-lg-3 col-6">
         <div class="small-box bg-danger">
             <div class="inner">
-                <h3>65</h3>
-                <p>Unique Visitors</p>
+                <h3>{{ $productosBajoStock }}</h3>
+                <p>Productos con Bajo Stock</p>
             </div>
             <div class="icon">
-                <i class="fas fa-chart-pie"></i>
+                <i class="fas fa-box"></i>
             </div>
-            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-lg-6">
-        <!-- Line chart -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h4>Comparación de Ventas Semanales</h4>
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Sales Report</h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                    <button type="button" class="btn btn-tool" data-card-widget="remove">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
             <div class="card-body">
-                <canvas id="salesChart" style="height: 250px;"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-6">
-        <!-- Pie chart -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">User Demographics</h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                    <button type="button" class="btn btn-tool" data-card-widget="remove">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="card-body">
-                <canvas id="userDemographicsChart" style="height: 250px;"></canvas>
+                <canvas id="ventasSemanaChart" style="height: 200px; max-width: 100%;"></canvas>
             </div>
         </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-12">
-        <!-- Table -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Latest Orders</h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                    <button type="button" class="btn btn-tool" data-card-widget="remove">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="card-body table-responsive p-0">
-                <table class="table table-hover text-nowrap">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Item</th>
-                            <th>Status</th>
-                            <th>Popularity</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>183</td>
-                            <td>Call of Duty</td>
-                            <td><span class="badge bg-success">Shipped</span></td>
-                            <td>
-                                <div class="progress progress-xs">
-                                    <div class="progress-bar bg-success" style="width: 80%"></div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>219</td>
-                            <td>Xbox One</td>
-                            <td><span class="badge bg-warning">Pending</span></td>
-                            <td>
-                                <div class="progress progress-xs">
-                                    <div class="progress-bar bg-warning" style="width: 50%"></div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>657</td>
-                            <td>PlayStation 4</td>
-                            <td><span class="badge bg-danger">Delivered</span></td>
-                            <td>
-                                <div class="progress progress-xs">
-                                    <div class="progress-bar bg-danger" style="width: 70%"></div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>175</td>
-                            <td>MacBook Pro</td>
-                            <td><span class="badge bg-info">Processing</span></td>
-                            <td>
-                                <div class="progress progress-xs">
-                                    <div class="progress-bar bg-info" style="width: 60%"></div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>134</td>
-                            <td>Samsung Galaxy</td>
-                            <td><span class="badge bg-success">Shipped</span></td>
-                            <td>
-                                <div class="progress progress-xs">
-                                    <div class="progress-bar bg-success" style="width: 70%"></div>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="col-md-6">
+        <h4>Productos Más Vendidos</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Total Vendido</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($productosMasVendidos as $producto)
+                    <tr>
+                        <td>{{ $producto->nombre }}</td>
+                        <td><span class="badge badge-success">{{ $producto->total_vendido }}</span></td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-6">
+        <h4>Productos Menos Vendidos</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Total Vendido</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($productosMenosVendidos as $producto)
+                    <tr>
+                        <td>{{ $producto->nombre }}</td>
+                        <td><span class="badge badge-danger">{{ $producto->total_vendido }}</span></td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
 </div>
-@stop
+
+<div class="row">
+    <div class="col-md-6">
+        <h4>Últimas Órdenes de Compra</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Proveedor</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($ultimasOrdenesCompra as $orden)
+                    <tr>
+                        <td>{{ $orden->id }}</td>
+                        <td>{{ $orden->proveedor->nombre }}</td>
+                        <td>
+                            <span class="badge {{ $orden->estado == 'entregado' ? 'badge-success' : 'badge-warning' }}">
+                                {{ $orden->estado }}
+                            </span>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-6">
+        <h4>Últimas Facturas</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Número Factura</th>
+                    <th>Fecha</th>
+                    <th>Monto Total</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($ultimasfacturas as $factura)
+                    <tr>
+                        <td>{{ $factura->numero_factura }}</td>
+                        <td>{{ $factura->fecha_emision }}</td>
+                        
+                        <td>${{ $factura->monto_total }}</td>
+                        <td>
+                            <span class="badge {{ $factura->estado_pago == 'pagado' ? 'badge-success' : 'badge-warning' }}">
+                                {{ $factura->estado_pago }}
+                            </span>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@endsection
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Line chart
-    var ctx = document.getElementById('salesChart').getContext('2d');
-    var salesChart = new Chart(ctx, {
+    const ventasSemanaChartCtx = document.getElementById('ventasSemanaChart').getContext('2d');
+    const ventasSemanaChart = new Chart(ventasSemanaChartCtx, {
         type: 'line',
         data: {
-            labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-            datasets: [{
-                label: 'Sales',
-                data: [65, 59, 80, 81, 56, 55, 40],
-                backgroundColor: 'rgba(60,141,188,0.2)',
-                borderColor: 'rgba(60,141,188,1)',
-                borderWidth: 1
-            }]
+            labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
+            datasets: [
+                {
+                    label: 'Semana Actual',
+                    data: [{{ $ventasSemanaActual->get('Monday', 0) }}, {{ $ventasSemanaActual->get('Tuesday', 0) }}, {{ $ventasSemanaActual->get('Wednesday', 0) }}, {{ $ventasSemanaActual->get('Thursday', 0) }}, {{ $ventasSemanaActual->get('Friday', 0) }}, {{ $ventasSemanaActual->get('Saturday', 0) }}, {{ $ventasSemanaActual->get('Sunday', 0) }}],
+                    borderColor: 'rgba(60,141,188,1)',
+                    backgroundColor: 'rgba(60,141,188,0.2)',
+                    fill: true
+                },
+                {
+                    label: 'Semana Anterior',
+                    data: [{{ $ventasSemanaAnterior->get('Monday', 0) }}, {{ $ventasSemanaAnterior->get('Tuesday', 0) }}, {{ $ventasSemanaAnterior->get('Wednesday', 0) }}, {{ $ventasSemanaAnterior->get('Thursday', 0) }}, {{ $ventasSemanaAnterior->get('Friday', 0) }}, {{ $ventasSemanaAnterior->get('Saturday', 0) }}, {{ $ventasSemanaAnterior->get('Sunday', 0) }}],
+                    borderColor: 'rgba(210, 214, 222, 1)',
+                    backgroundColor: 'rgba(210, 214, 222, 0.5)',
+                    fill: true
+                }
+            ]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             scales: {
-                x: {
-                    beginAtZero: true
-                },
-                y: {
-                    beginAtZero: true
-                }
+                y: { beginAtZero: true }
             }
         }
     });
-
-    // Pie chart
-    var ctx2 = document.getElementById('userDemographicsChart').getContext('2d');
-    var userDemographicsChart = new Chart(ctx2, {
-        type: 'pie',
-        data: {
-            labels: ['Male', 'Female', 'Other'],
-            datasets: [{
-                label: 'User Demographics',
-                data: [45, 35, 20],
-                backgroundColor: ['#f56954', '#00a65a', '#f39c12'],
-            }]
-        },
-        options: {
-            responsive: true,
-        }
-    });
 </script>
-@stop
+@endsection

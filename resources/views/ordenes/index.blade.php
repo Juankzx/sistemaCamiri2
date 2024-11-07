@@ -44,7 +44,7 @@
                         <th>Proveedor</th>
                         <th>Fecha</th>
                         <th>Estado</th>
-                        <th>Total</th>
+                        
                         <th style="width: 30%;">Acciones</th>
                     </tr>
                 </thead>
@@ -59,7 +59,6 @@
                                 {{ $orden->estado }}
                             </span>
                         </td>
-                        <td>${{ number_format($orden->total, 0) }}</td>
                         <td>
                             <a class="btn btn-sm btn-primary" href="{{ route('ordenes-compras.show', $orden->id) }}">
                                 <i class="fa fa-fw fa-eye"></i>

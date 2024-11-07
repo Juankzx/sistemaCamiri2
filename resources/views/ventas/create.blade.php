@@ -27,8 +27,8 @@
                         <!-- Mostrar la sucursal activa de la caja abierta -->
                         <div class="form-group mb-3">
                             <label for="sucursal_id" class="form-label">Sucursal Activa</label>
-                            <input type="text" class="form-control" value="{{ $sucursalActiva }}" readonly>
-                            <input type="hidden" name="sucursal_id" value="{{ $sucursalActiva }}">
+                            <input type="text" class="form-control" value="{{ $sucursalActiva->nombre }}" readonly>
+                            <input type="hidden" name="sucursal_id" value="{{ $sucursalActiva->id }}">
                         </div>
 
                         <div class="form-group mb-3">

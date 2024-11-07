@@ -32,15 +32,15 @@
                             <table class="table table-striped table-hover">
                                 <thead class="thead">
                                     <tr>
-                                        <th>No</th>
+                                        <th>N°</th>
                                         <th>Nombre</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="paymentMethodTableBody">
-                                    @foreach ($metodosPagos as $metodosPago)
+                                    @foreach ($metodosPagos as $index => $metodosPago)
                                         <tr>
-                                            <td>{{ ++$i }}</td>
+                                            <td>{{ $index + 1 + ($metodosPagos->currentPage() - 1) * $metodosPagos->perPage() }}</td>
                                             <td>{{ $metodosPago->nombre }}</td>
                                             <td>
                                                 <a class="btn btn-sm btn-primary" href="{{ route('metodos-pagos.show', $metodosPago->id) }}"><i class="fa fa-fw fa-eye"></i></a>
@@ -51,13 +51,30 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                            
+                            <!-- Paginación e información de registros -->
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div>
+                                    <p class="small text-muted">
+                                        Mostrando {{ $metodosPagos->firstItem() }} a {{ $metodosPagos->lastItem() }} de {{ $metodosPagos->total() }} registros
+                                    </p>
+                                </div>
+                                <div>
+                                    {{ $metodosPagos->links('pagination::bootstrap-4') }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                {!! $metodosPagos->withQueryString()->links() !!}
             </div>
         </div>
     </div>
+
+    <!-- Formulario oculto para eliminación -->
+    <form id="deleteForm" action="" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
 @endsection
 
 @section('js')
@@ -140,19 +157,9 @@
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // Crear un formulario dinámicamente para la eliminación
-                        const form = document.createElement('form');
-                        form.action = `/metodos-pagos/${id}`;
-                        form.method = 'POST';
-                        form.style.display = 'none';
-
-                        // Agregar tokens y método DELETE
-                        form.innerHTML = `
-                            @csrf
-                            @method('DELETE')
-                        `;
-                        document.body.appendChild(form);
-                        form.submit();
+                        const deleteForm = document.getElementById('deleteForm');
+                        deleteForm.action = `/metodos-pagos/${id}`;
+                        deleteForm.submit();
                     }
                 });
             });

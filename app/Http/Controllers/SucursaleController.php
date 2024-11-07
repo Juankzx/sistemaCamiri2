@@ -16,7 +16,8 @@ class SucursaleController extends Controller
      */
     public function index(Request $request): View
     {
-        $sucursales = Sucursale::paginate();
+        // Solo mostrar sucursales activas
+        $sucursales = Sucursale::where('estado', true)->paginate(15);
 
         return view('sucursale.index', compact('sucursales'))
             ->with('i', ($request->input('page', 1) - 1) * $sucursales->perPage());
@@ -91,9 +92,14 @@ class SucursaleController extends Controller
 
     public function destroy($id): RedirectResponse
     {
-        Sucursale::find($id)->delete();
+        // Cambiar el estado a false en lugar de eliminar
+        $sucursal = Sucursale::find($id);
+        if ($sucursal) {
+            $sucursal->estado = false;
+            $sucursal->save();
+        }
 
         return Redirect::route('sucursales.index')
-            ->with('success', 'Sucursale deleted successfully');
+            ->with('success', 'Sucursal borrada exitosamente');
     }
 }

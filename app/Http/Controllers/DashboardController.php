@@ -20,11 +20,11 @@ class DashboardController extends Controller
 
     public function index(Request $request)
     {
-        $sucursales = Sucursale::all();
-        $selectedSucursal = $request->input('sucursal_id', $sucursales->first()->id);
+        //$sucursales = Sucursale::all();
+        //$selectedSucursal = $request->input('sucursal_id', $sucursales->first()->id);
 
         
 
-        return view('home', compact('sucursales'));
+        return view('home');
     }
 }

@@ -20,9 +20,9 @@
                         <small class="float-right">Fecha: {{ \Carbon\Carbon::now()->format('d/m/Y') }}</small>
                     </h4>
                 </div>
-                <!-- /.col -->
             </div>
-            <!-- info row -->
+
+            <!-- Info row -->
             <div class="row invoice-info">
                 <div class="col-sm-4 invoice-col">
                     <div class="form-group">
@@ -30,19 +30,17 @@
                         <select class="form-control" id="factura_id" name="factura_id" onchange="loadInvoiceDetails()">
                             <option value="" disabled selected>Seleccione una Factura</option>
                             @foreach($facturas as $factura)
-                                <option value="{{ $factura->id }}" data-factura="{{ json_encode($factura) }}">N°: {{ $factura->numero_factura }}</option>
+                                <option value="{{ $factura->id }}">N°: {{ $factura->numero_factura }}</option>
                             @endforeach
                         </select>
                     </div>
                 </div>
-                <!-- /.col -->
                 <div class="col-sm-4 invoice-col">
                     <address id="proveedor_info">
                         <strong>Seleccione una factura</strong><br>
                     </address>
                 </div>
             </div>
-            <!-- /.row -->
 
             <!-- Details row -->
             <div class="row">
@@ -65,14 +63,14 @@
             </div>
 
             <div class="row">
-                <!-- accepted payments column -->
+                <!-- Payment method column -->
                 <div class="col-12">
                     <p class="lead">Métodos de Pago:</p>
                     <div class="form-group">
                         <label for="metodo_pago_id">Método de Pago</label>
-                        <select class="form-control" id="metodo_pago_id" name="metodo_pago_id" required>
+                        <select class="form-control" id="metodo_pago_id" name="metodo_pago_id" onchange="toggleTransferencia()" required>
                             <option value="">Seleccione un método de pago</option>
-                            @foreach ($metodosPago as $metodo)  <!-- Usar $metodosPago con el nombre correcto -->
+                            @foreach ($metodosPago as $metodo)
                                 <option value="{{ $metodo->id }}">{{ $metodo->nombre }}</option>
                             @endforeach
                         </select>
@@ -83,7 +81,7 @@
                     </div>
                     <div class="form-group" id="transferencia-group" style="display: none;">
                         <label for="numero_transferencia">Número de Transferencia</label>
-                        <input type="text" class="form-control" id="numero_transferencia" name="numero_transferencia">
+                        <input type="text" class="form-control" id="numero_transferencia" name="numero_transferencia" placeholder="Ingrese el número de transferencia">
                     </div>
                     <div class="form-group">
                         <label for="fecha_pago">Fecha de Pago</label>
@@ -95,7 +93,6 @@
                     </div>
                 </div>
             </div>
-            <!-- /.row -->
 
             <!-- this row will not appear when printing -->
             <div class="row no-print">
@@ -106,38 +103,59 @@
         </div>
     </form>
 </div>
+@endsection
 
+@section('js')
 <script>
 function loadInvoiceDetails() {
     const facturaSelect = document.getElementById('factura_id');
-    const facturaData = facturaSelect.options[facturaSelect.selectedIndex].getAttribute('data-factura');
-    const factura = JSON.parse(facturaData);
+    const facturaId = facturaSelect.value;
 
-    document.getElementById('monto').value = factura.total_factura;
-    document.getElementById('proveedor_info').innerHTML = `
-        <strong>${factura.guia_despacho.orden_compra.proveedor.nombre ?? 'No asignado'}</strong><br>
-        RUT: ${factura.guia_despacho.orden_compra.proveedor.rut ?? 'No asignado'}
-    `;
+    fetch(`/api/pagos/${facturaId}/detalles`)
+        .then(response => response.json())
+        .then(factura => {
+            // Aseguramos que la estructura de datos sea correcta
+            if (factura && factura.guia_despacho && factura.guia_despacho.detalles_guia_despacho) {
+                const detallesContainer = document.getElementById('detalles_factura');
+                detallesContainer.innerHTML = ''; // Limpiar la tabla
 
-    const detallesContainer = document.getElementById('detalles_factura');
-    detallesContainer.innerHTML = '';
-    factura.guia_despacho.orden_compra.detalles.forEach(detalle => {
-        detallesContainer.insertAdjacentHTML('beforeend', `
-            <tr>
-                <td>${detalle.producto.nombre}</td>
-                <td>${detalle.cantidad}</td>
-                <td>${detalle.precio_compra}</td>
-                <td>${detalle.cantidad * detalle.precio_compra}</td>
-            </tr>
-        `);
-    });
+                let totalFactura = 0;
+
+                factura.guia_despacho.detalles_guia_despacho.forEach(detalle => {
+                    const subtotal = detalle.cantidad_entregada * detalle.precio_compra;
+                    totalFactura += subtotal;
+
+                    detallesContainer.insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td>${detalle.producto.nombre}</td>
+                            <td>${detalle.cantidad_entregada}</td>
+                            <td>${detalle.precio_compra}</td>
+                            <td>${subtotal}</td>
+                        </tr>
+                    `);
+                });
+
+                // Mostrar otros datos de la factura en la vista
+                document.getElementById('monto').value = factura.monto_total || 0;
+                document.getElementById('proveedor_info').innerHTML = `
+                    <strong>${factura.guia_despacho.orden_compra.proveedor.nombre}</strong><br>
+                    RUT: ${factura.guia_despacho.orden_compra.proveedor.rut}
+                `;
+            } else {
+                console.error("Detalles de la factura no encontrados o mal estructurados");
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar los detalles de la factura:', error);
+        });
 }
 
 function toggleTransferencia() {
     const metodoPagoSelect = document.getElementById('metodo_pago_id');
     const transferenciaGroup = document.getElementById('transferencia-group');
-    
-    if (metodoPagoSelect.options[metodoPagoSelect.selectedIndex].text === 'Transferencia') {
+
+    // Verificar si el texto seleccionado es "Tarjeta"
+    if (metodoPagoSelect.options[metodoPagoSelect.selectedIndex].text === 'Tarjeta') {
         transferenciaGroup.style.display = 'block';
     } else {
         transferenciaGroup.style.display = 'none';

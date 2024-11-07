@@ -71,7 +71,7 @@
                         <td>{{ $inventario->stock_critico }}</td>
                         <td>
                            <!-- Botón para abrir el modal de incrementar con información adicional -->
-                <button class="btn btn-info" 
+                <button class="btn btn-info btn-sm" 
                         data-toggle="modal" 
                         data-target="#incrementarModal" 
                         data-id="{{ $inventario->id }}" 
@@ -83,7 +83,7 @@
                 </button>
                             
                             <!-- Botón para abrir el modal de decrementar -->
-                            <button class="btn btn-warning" 
+                            <button class="btn btn-warning btn-sm" 
                                     data-toggle="modal" 
                                     data-target="#decrementarModal" 
                                     data-id="{{ $inventario->id }}" 
@@ -95,7 +95,7 @@
                         </td>
                         <td>
                             <!-- Botón para abrir el modal de transferencia -->
-                            <button class="btn btn-primary" 
+                            <button class="btn btn-primary btn-sm" 
                                     data-toggle="modal" 
                                     data-target="#transferModal" 
                                     data-id="{{ $inventario->id }}" 
@@ -106,12 +106,12 @@
                             </button>
 
                             <!-- Botón para editar -->
-                            <a href="{{ route('inventarios.edit', $inventario->id) }}" class="btn btn-success"><i class="fa fa-fw fa-edit"></i></a>
+                            <a href="{{ route('inventarios.edit', $inventario->id) }}" class="btn btn-success btn-sm"><i class="fa fa-fw fa-edit"></i></a>
 
                             <form action="{{ route('inventarios.destroy', $inventario->id) }}" method="POST" style="display:inline;" class="form-delete" data-id="{{ $inventario->id }}">
                                 @csrf
                                 @method('DELETE')
-                                <button type="button" class="btn btn-danger delete-btn">
+                                <button type="button" class="btn btn-danger delete-btn btn-sm">
                                     <i class="fa fa-fw fa-trash"></i>
                                 </button>
                             </form>

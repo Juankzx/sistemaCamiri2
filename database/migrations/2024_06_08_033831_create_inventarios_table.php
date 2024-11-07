@@ -16,7 +16,9 @@ return new class extends Migration
             $table->unsignedBigInteger('producto_id');
             $table->unsignedBigInteger('sucursal_id')->nullable();
             $table->unsignedBigInteger('bodega_id')->nullable();
-            $table->integer('cantidad');
+            $table->decimal('cantidad', 8, 2);
+            $table->integer('stock_minimo')->default(0);
+            $table->integer('stock_critico')->default(0);
             $table->timestamps();
 
             // Definir las claves foráneas

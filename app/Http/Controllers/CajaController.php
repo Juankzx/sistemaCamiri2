@@ -14,7 +14,9 @@ class CajaController extends Controller
 {
     public function index()
     {
-        $cajas = Caja::with('sucursal', 'user')->paginate(15);
+        $cajas = Caja::with('sucursal', 'user')
+        ->orderBy('created_at', 'desc') // Ordenar por la fecha de creación en orden descendente
+        ->paginate(15);
         $sucursales = Sucursale::all();
         $cajaAbierta = Caja::where('estado', true)->first();
 

@@ -13,10 +13,12 @@ use Illuminate\View\View;
 class UnidadMedidaController extends Controller
 {
     public function index()
-    {
-        $unidades = UnidadMedida::all();
-        return view('unidades.index', compact('unidades'));
-    }
+{
+    // Filtrar solo unidades activas y agregar paginación
+    $unidades = UnidadMedida::where('estado', 1)->paginate(15); // Ajusta el número según el tamaño de página que desees
+    return view('unidades.index', compact('unidades'));
+}
+
 
     public function create()
     {
@@ -64,7 +66,12 @@ class UnidadMedidaController extends Controller
 
     public function destroy($id): RedirectResponse
     {
-        UnidadMedida::find($id)->delete();
+        // Cambiar el estado de la unidad de medida a inactivo en lugar de eliminarla
+    $unidad = UnidadMedida::find($id);
+    if ($unidad) {
+        $unidad->estado = false; // Cambiar el estado a inactivo
+        $unidad->save();
+    }
         return redirect()->route('unidades.index')->with('success', 'Unidad de medida eliminada con éxito.');
     }
 }

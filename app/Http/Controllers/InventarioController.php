@@ -267,4 +267,58 @@ public function update(Request $request, Inventario $inventario)
     }
 }
 
+public function storeMultiple(Request $request)
+{
+    // Validar que los campos principales estén presentes
+    $request->validate([
+        'producto_ids' => 'required|array',
+        'producto_ids.*' => 'exists:productos,id',
+        'cantidad.*' => 'required|integer|min:1',
+        'bodega_id.*' => 'required|exists:bodegas,id',
+    ]);
+
+    $errores = []; // Array para almacenar los errores de duplicación
+
+    // Iterar sobre los productos seleccionados
+    foreach ($request->producto_ids as $productoId) {
+        // Verificar si el producto ya existe en la bodega seleccionada
+        $existe = Inventario::where('producto_id', $productoId)
+                            ->where('bodega_id', $request->bodega_id[$productoId])
+                            ->exists();
+
+        if ($existe) {
+            // Si ya existe, agregar un mensaje de error al array de errores
+            $errores[] = "El producto con ID $productoId ya está registrado en la bodega seleccionada.";
+        } else {
+            // Si no existe, proceder a crear el inventario
+            Inventario::create([
+                'producto_id' => $productoId,
+                'bodega_id' => $request->bodega_id[$productoId],
+                'cantidad' => $request->cantidad[$productoId],
+                'stock_minimo' => $request->stock_minimo[$productoId],
+                'stock_critico' => $request->stock_critico[$productoId],
+            ]);
+        }
+    }
+
+    // Si hay errores, redirigir de vuelta con los mensajes de error
+    if (!empty($errores)) {
+        return redirect()->back()->withErrors($errores);
+    }
+
+    // Si no hubo errores, redireccionar con mensaje de éxito
+    return redirect()->route('inventarios.index')->with('success', 'Inventarios agregados exitosamente.');
+}
+
+public function checkProducto(Request $request)
+{
+    $exists = Inventario::where('producto_id', $request->producto_id)
+                        ->where('bodega_id', 1) // Cambia '1' por el ID de la bodega general
+                        ->exists();
+
+    return response()->json(['exists' => $exists]);
+}
+
+
+
 }

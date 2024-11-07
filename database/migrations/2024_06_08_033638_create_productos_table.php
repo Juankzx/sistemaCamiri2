@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('imagen')->nullable();
             $table->integer('preciocompra');
             $table->integer('precioventa');
-            $table->boolean('estado');
+            $table->boolean('estado')->default(true);;
             
 
             $table->timestamps();

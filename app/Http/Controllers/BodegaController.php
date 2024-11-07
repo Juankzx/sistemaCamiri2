@@ -10,7 +10,7 @@ class BodegaController extends Controller
 {
     public function index()
     {
-        $bodegas = Bodega::paginate(15);
+        $bodegas = Bodega::where('estado', true)->paginate(15);
         return view('bodegas.index', compact('bodegas'));
     }
 
@@ -48,11 +48,6 @@ class BodegaController extends Controller
         return view('bodegas.edit', compact('bodega'));
     }
 
-    public function destroy(Bodega $bodega)
-    {
-        $bodega->delete();
-        return redirect()->route('bodegas.index')->with('success', 'Bodega eliminada exitosamente.');
-    }
     public function show($id)
 {
     $bodegaGeneral = Bodega::findOrFail($id);
@@ -64,5 +59,16 @@ class BodegaController extends Controller
 
     return view('bodegas.show', compact('bodegaGeneral', 'productos'));
 }
+
+public function destroy(Bodega $bodega)
+    {
+        $bodegas = Bodega::find($id);
+        if ($bodegas) {
+            $bodegas->estado = false;
+            $bodegas->save();
+        }
+
+        return redirect()->route('bodegas.index')->with('success', 'Bodega eliminada exitosamente.');
+    }
 
 }

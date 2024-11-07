@@ -54,9 +54,20 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Paginación y conteo de registros -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                <p class="small text-muted">
+                                    Mostrando {{ $sucursales->firstItem() }} a {{ $sucursales->lastItem() }} de {{ $sucursales->total() }} registros
+                                </p>
+                            </div>
+                            <div>
+                                {{ $sucursales->links('pagination::bootstrap-4') }}
+                            </div>
+                        </div>
                     </div>
                 </div>
-                {!! $sucursales->withQueryString()->links() !!}
             </div>
         </div>
     </div>

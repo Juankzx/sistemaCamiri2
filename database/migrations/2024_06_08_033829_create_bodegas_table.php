@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('bodegas', function (Blueprint $table) {
             $table->id();
             $table->string('nombre')->unique();
+            $table->boolean('estado')->default(true);
             $table->timestamps();
         });
     }

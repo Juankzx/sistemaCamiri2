@@ -16,7 +16,7 @@ class MetodosPagoController extends Controller
      */
     public function index(Request $request): View
     {
-        $metodosPagos = MetodosPago::paginate();
+        $metodosPagos = MetodosPago::where('estado', true)->paginate(15);
 
         return view('metodos-pago.index', compact('metodosPagos'))
             ->with('i', ($request->input('page', 1) - 1) * $metodosPagos->perPage());
@@ -91,9 +91,13 @@ class MetodosPagoController extends Controller
 
     public function destroy($id): RedirectResponse
     {
-        MetodosPago::find($id)->delete();
+            $metodosPagos = MetodosPago::find($id);
+        if ($metodosPagos) {
+            $metodosPagos->estado = false;
+            $metodosPagos->save();
+        }
 
         return Redirect::route('metodos-pagos.index')
-            ->with('success', 'MetodosPago deleted successfully');
+            ->with('success', 'Metodo Pago eliminado exitosamente');
     }
 }

@@ -39,14 +39,13 @@ class Producto extends Model
         'precioventa',
         'categoria_id',
         'proveedor_id',
-        'estado',
 
     ];
 
     
     public function inventarios()
     {
-        return $this->hasMany(Inventario::class);
+        return $this->hasMany(Inventario::class, 'producto_id', 'id');
     }
 
     public function categoria()
@@ -67,9 +66,15 @@ class Producto extends Model
      */
     public function detallesVentas()
     {
-        return $this->hasMany(\App\Models\DetallesVentum::class, 'id', 'producto_id');
+        return $this->hasMany(\App\Models\DetallesVentum::class, 'producto_id', 'id');
     }
+    
 
+
+    public function ventas()
+    {
+        return $this->hasManyThrough(Venta::class, DetalleVenta::class, 'producto_id', 'id', 'id', 'venta_id');
+    }
     
     
     public function unidadMedida()

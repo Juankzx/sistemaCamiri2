@@ -25,8 +25,10 @@ class ProductoController extends Controller
      public function index(Request $request)
      {
          $productos = Producto::with(['unidadmedida', 'categoria', 'proveedor'])
-                              ->paginate(15)
-                              ->withQueryString();
+         ->where('estado', 1) // Filtrar solo productos con estado "activo"
+            ->orderBy('created_at', 'desc') // Ordenar por 'created_at' // Ordenar los pagos por la fecha de creación en orden descendente
+            ->paginate(15)
+            ->withQueryString();
      
          return view('producto.index', compact('productos'))
                 ->with('i', (request()->input('page', 1) - 1) * 10);
@@ -39,10 +41,16 @@ class ProductoController extends Controller
      */
     public function create()
     {
-        $unidadMedida = UnidadMedida::all();
+        // Solo cargar categorías activas
+        $unidadMedida = UnidadMedida::where('estado', true)->get();
+
         $producto = new Producto();
-        $categorias = Categoria::all();
-        $proveedores = Proveedore::all();
+        
+        // Solo cargar categorías activas
+        $categorias = Categoria::where('estado', true)->get();
+        
+        // Solo cargar proveedores activas
+        $proveedores = Proveedore::where('estado', true)->get();
 
         return view('producto.create', compact('producto', 'categorias', 'proveedores', 'unidadMedida'));
     }
@@ -62,7 +70,6 @@ class ProductoController extends Controller
             'precioventa' => 'required|integer',
             'categoria_id' => 'nullable|exists:categorias,id',
             'proveedor_id' => 'nullable|exists:proveedores,id',
-            'estado' => 'required|boolean',
         ], [
             'nombre.unique' => 'El nombre del producto ya existe. Por favor, elija un nombre diferente.',
             'codigo_barra.unique' => 'El código de barras ya está registrado para otro producto.',
@@ -161,7 +168,12 @@ class ProductoController extends Controller
 
     public function destroy($id): RedirectResponse
     {
-        Producto::find($id)->delete();
+        // Cambiar el estado a "inactivo" en lugar de eliminar el producto
+        $producto = Producto::find($id);
+        if ($producto) {
+            $producto->estado = false;
+            $producto->save();
+        }
 
         return Redirect::route('productos.index')
             ->with('success', 'Producto deleted successfully');

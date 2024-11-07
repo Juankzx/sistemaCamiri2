@@ -2,11 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Pago extends Model
 {
-    protected $fillable = ['factura_id', 'metodo_pago_id', 'monto', 'fecha_pago', 'numero_transferencia', 'estado_pago'];
+    use HasFactory;
+
+    protected $fillable = [
+    'factura_id', 
+    'metodo_pago_id', 
+    'monto', 
+    'fecha_pago', 
+    'numero_transferencia', 
+    'estado_pago'];
 
     public function factura()
     {

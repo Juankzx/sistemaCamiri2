@@ -20,19 +20,18 @@ class DetalleOrdenCompraController extends Controller
     }
 
     public function store(Request $request)
-{
-    $validatedData = $request->validate([
-        'orden_compra_id' => 'required|exists:ordenes_compras,id',
-        'producto_id' => 'required|exists:productos,id',
-        'cantidad' => 'required|integer|min:1',
-        'precio_compra' => 'required|numeric',
-        'inventario_id' => 'required|exists:inventarios,id',  // Asegúrate de validar este campo
-    ]);
+    {
+        // Validar sin precio_compra, ya que se gestionará en la guía de despacho
+        $validatedData = $request->validate([
+            'orden_compra_id' => 'required|exists:ordenes_compras,id',
+            'producto_id' => 'required|exists:productos,id',
+            'cantidad' => 'required|integer|min:1',
+            'inventario_id' => 'required|exists:inventarios,id',  
+        ]);
 
-    DetalleOrdenCompra::create($validatedData);
-    return redirect()->route('detalles.index')->with('success', 'Detalle de orden de compra creado con éxito.');
-}
-
+        DetalleOrdenCompra::create($validatedData);
+        return redirect()->route('detalles.index')->with('success', 'Detalle de orden de compra creado con éxito.');
+    }
 
     public function show(DetalleOrdenCompra $detalle)
     {
@@ -46,7 +45,15 @@ class DetalleOrdenCompraController extends Controller
 
     public function update(Request $request, DetalleOrdenCompra $detalle)
     {
-        $detalle->update($request->all());
+        // Actualizar sin campo precio_compra
+        $validatedData = $request->validate([
+            'orden_compra_id' => 'required|exists:ordenes_compras,id',
+            'producto_id' => 'required|exists:productos,id',
+            'cantidad' => 'required|integer|min:1',
+            'inventario_id' => 'required|exists:inventarios,id',  
+        ]);
+
+        $detalle->update($validatedData);
         return redirect()->route('detalles.index')->with('success', 'Detalle de orden de compra actualizado con éxito.');
     }
 

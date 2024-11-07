@@ -16,7 +16,8 @@ class ProveedoreController extends Controller
      */
     public function index(Request $request): View
     {
-        $proveedores = Proveedore::paginate();
+        // Filtrar solo proveedores activos
+    $proveedores = Proveedore::where('estado', true)->paginate(15);
 
         return view('proveedore.index', compact('proveedores'))
             ->with('i', ($request->input('page', 1) - 1) * $proveedores->perPage());
@@ -113,9 +114,14 @@ class ProveedoreController extends Controller
 
     public function destroy($id): RedirectResponse
     {
-        Proveedore::find($id)->delete();
+        // Cambiar el estado a inactivo en lugar de eliminar
+    $proveedor = Proveedore::find($id);
+    if ($proveedor) {
+        $proveedor->estado = false;
+        $proveedor->save();
+    }
 
         return Redirect::route('proveedores.index')
-            ->with('success', 'Proveedore deleted successfully');
+            ->with('success', 'Proveedor eliminado exitosamente');
     }
 }

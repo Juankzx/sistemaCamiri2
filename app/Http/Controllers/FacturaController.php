@@ -7,47 +7,59 @@ use App\Models\GuiaDespacho;
 use App\Models\OrdenCompra;
 use App\Models\Factura;
 use App\Models\MetodosPago;
+use App\Models\DetalleGuiaDespachoPago;
 use Illuminate\Http\Request;
 
 class FacturaController extends Controller
 {
     public function index()
     {
-        $facturas = Factura::with(['guiaDespacho', 'ordenCompra'])->paginate(15); 
+        $facturas = Factura::with(['guiaDespacho', 'ordenCompra'])
+        ->orderBy('created_at', 'desc') // Ordenar por la fecha de creación en orden descendente
+        ->paginate(15); 
         return view('facturas.index', compact('facturas'));
     }
 
     public function create()
     {
-        $guiasDespacho = GuiaDespacho::all();
+        $guiasDespacho = GuiaDespacho::whereIn('estado', ['emitida', 'en_transito'])->get();
+        
         return view('facturas.create', compact('guiasDespacho'));
     }
 
 
     public function store(Request $request)
 {
-    // Validar los datos de la factura
+    // Validar los datos que llegan en la solicitud
     $validatedData = $request->validate([
-        'guia_despacho_id' => 'required|exists:guias_despacho,id',
-        'numero_factura' => 'required|unique:facturas,numero_factura',
-        'fecha_factura' => 'required|date',
-        'total_factura' => 'required|numeric',
-        'estado_pago' => 'required|in:pendiente,pagado',
-        'orden_compra_id' => 'required|exists:ordenes_compras,id',
+        'guia_despacho_id' => 'required|exists:guias_despacho,id', // Validar que la guía de despacho existe
+        'numero_factura' => 'required|string|unique:facturas,numero_factura', // Número de factura debe ser único
+        'fecha_emision' => 'required|date', // La fecha de emisión debe ser una fecha válida
+        'monto_total' => 'required|numeric|min:0', // Monto total debe ser numérico y mayor o igual a 0
+        'estado_pago' => 'required|in:pendiente,pagado', // Estado de pago (pendiente o pagado)
     ]);
 
-    // Crear la factura
-    $factura = Factura::create($validatedData);
+    try {
+        // Crear la nueva factura
+        $factura = Factura::create([
+            'guia_despacho_id' => $validatedData['guia_despacho_id'], // Asociar la factura con la guía de despacho
+            'numero_factura' => $validatedData['numero_factura'], // Número de factura único
+            'fecha_emision' => $validatedData['fecha_emision'], // Fecha de emisión
+            'monto_total' => $validatedData['monto_total'], // Monto total de la factura
+            'estado_pago' => $validatedData['estado_pago'], // Estado de pago
+        ]);
 
-    // Actualizar estado de la Orden de Compra a "en_transito"
-    $ordenCompra = OrdenCompra::find($validatedData['orden_compra_id']);
-    $ordenCompra->update(['estado' => 'en_transito']);
+        // Opcional: Actualizar el estado de la guía de despacho si se requiere algún cambio
+        $guiaDespacho = GuiaDespacho::findOrFail($validatedData['guia_despacho_id']);
+        if ($factura->estado_pago === 'pagado') {
+            $guiaDespacho->update(['estado' => 'entregada']); // Actualiza el estado de la guía a "entregada" si la factura está pagada
+        }
 
-    return redirect()->route('facturas.index')->with('success', 'Factura creada y estado de la orden de compra actualizado a "en_transito".');
+        return redirect()->route('facturas.index')->with('success', 'Factura creada exitosamente.');
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'Error al crear la factura: ' . $e->getMessage());
+    }
 }
-
-    
-
 
     public function show(Factura $factura)
     {
@@ -73,13 +85,15 @@ class FacturaController extends Controller
 
     public function getDetalles($id)
 {
-    $factura = Factura::with('guiaDespacho.ordenCompra.proveedor')->findOrFail($id);
-    $proveedor = $factura->guiaDespacho->ordenCompra->proveedor;
+    $guiaDespacho = GuiaDespacho::with('detallesGuiaDespacho.producto', 'ordenCompra.proveedor')
+                                 ->findOrFail($id);
 
     return response()->json([
-        'factura' => $factura,
-        'proveedor' => $proveedor
+        'detalles' => $guiaDespacho->detallesGuiaDespacho,
+        'proveedor' => $guiaDespacho->ordenCompra->proveedor
     ]);
 }
+
+
 
 }

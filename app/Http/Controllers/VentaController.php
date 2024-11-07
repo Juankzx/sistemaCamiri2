@@ -26,10 +26,11 @@ class VentaController extends Controller
     
     public function index()
 {
-    // Obtén las ventas con sus relaciones
-    $ventas = Venta::with(['user', 'sucursal', 'metodo_pago', 'detallesVenta.producto', 'inventarios'])
-                    ->paginate(15)
-                    ->withQueryString();
+    // Obtén las ventas con sus relaciones, ordenadas por la fecha más reciente
+$ventas = Venta::with(['user', 'sucursal', 'metodo_pago', 'detallesVenta.producto', 'inventarios'])
+                ->orderBy('created_at', 'desc') // Ordenar por la fecha de creación en orden descendente
+                ->paginate(15)
+                ->withQueryString();
 
     // Obtén las sucursales para pasarlas a la vista
     $sucursales = Sucursale::all();
@@ -61,15 +62,15 @@ public function create()
                          ->with('error', 'No tiene una caja abierta. Por favor, abra una caja antes de realizar una venta.');
     }
 
-    // Obtener la sucursal activa de la caja abierta
-    $sucursalActiva = $cajaAbierta->sucursal_id;
+    // Obtener la sucursal activa como objeto completo
+    $sucursalActiva = Sucursale::find($cajaAbierta->sucursal_id);
 
     // Obtener todos los productos con inventarios de la sucursal activa
     $productos = Producto::with(['inventarios' => function ($query) use ($sucursalActiva) {
-        $query->where('sucursal_id', $sucursalActiva);
+        $query->where('sucursal_id', $sucursalActiva->id);
     }])
     ->whereHas('inventarios', function ($query) use ($sucursalActiva) {
-        $query->where('sucursal_id', $sucursalActiva);
+        $query->where('sucursal_id', $sucursalActiva->id);
     })
     ->get();
 
