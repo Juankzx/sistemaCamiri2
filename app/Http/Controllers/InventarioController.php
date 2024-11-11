@@ -9,6 +9,7 @@ use App\Models\Sucursale;
 use App\Models\Bodega;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
 
 class InventarioController extends Controller
 {
@@ -319,6 +320,87 @@ public function checkProducto(Request $request)
     return response()->json(['exists' => $exists]);
 }
 
+// Método para mostrar la vista de transferencia masiva
+public function transferirMasivo()
+    {
+        $productos = Producto::all();
+        $sucursales = Sucursale::all();
+        $bodegas = Bodega::all();
+
+        return view('inventarios.transferirmasivo', compact('productos', 'sucursales', 'bodegas'));
+    }
+
+    public function storeTransferirmasivo(Request $request)
+    {
+        $request->validate([
+            'sucursal_id' => 'required|exists:sucursales,id',
+            'cantidad' => 'required|array',
+            'cantidad.*' => 'numeric|min:1', // Cada cantidad debe ser numérica y al menos 1
+        ]);
+    
+        $sucursalDestinoId = $request->input('sucursal_id');
+        $cantidadTotalTransferida = 0;
+        $errores = [];
+    
+        \Log::info('Iniciando transferencia masiva de productos', [
+            'sucursal_id' => $sucursalDestinoId,
+            'cantidad' => $request->input('cantidad')
+        ]);
+    
+        foreach ($request->input('cantidad') as $productoId => $cantidad) {
+            $cantidad = intval($cantidad);
+    
+            if ($cantidad <= 0) {
+                \Log::warning("Cantidad a transferir es cero o no válida para producto ID $productoId");
+                continue;
+            }
+    
+            \Log::info('Procesando producto para transferencia', [
+                'producto_id' => $productoId,
+                'cantidad_a_transferir' => $cantidad
+            ]);
+    
+            $inventarioBodega = Inventario::where('producto_id', $productoId)
+                                           ->whereNotNull('bodega_id')
+                                           ->first();
+    
+            if (!$inventarioBodega || $inventarioBodega->cantidad < $cantidad) {
+                $errores[] = "No hay suficiente stock de producto ID $productoId en la bodega para transferir.";
+                \Log::error("No hay suficiente stock para producto ID $productoId en la bodega.");
+                continue;
+            }
+    
+            $inventarioBodega->cantidad -= $cantidad;
+            $inventarioBodega->save();
+    
+            $inventarioSucursal = Inventario::firstOrCreate(
+                ['producto_id' => $productoId, 'sucursal_id' => $sucursalDestinoId],
+                ['cantidad' => 0]
+            );
+    
+            $inventarioSucursal->cantidad += $cantidad;
+            $inventarioSucursal->save();
+    
+            Movimiento::create([
+                'producto_id' => $productoId,
+                'bodega_id' => $inventarioBodega->bodega_id,
+                'sucursal_id' => $sucursalDestinoId,
+                'tipo' => 'transferencia',
+                'cantidad' => $cantidad,
+                'fecha' => now(),
+                'user_id' => auth()->id()
+            ]);
+    
+            $cantidadTotalTransferida += $cantidad;
+        }
+    
+        if (!empty($errores)) {
+            return redirect()->back()->withErrors($errores);
+        }
+    
+        return redirect()->route('inventarios.index')->with('success', "Transferencia masiva completada. Total transferido: $cantidadTotalTransferida unidades.");
+    }
+    
 
 
 }

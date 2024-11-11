@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('codigo_barra')->unique();
             $table->string('nombre');
             $table->string('imagen')->nullable();
-            $table->integer('preciocompra');
+            $table->integer('preciocompra')->nullable();
             $table->integer('precioventa');
             $table->boolean('estado')->default(true);;
             

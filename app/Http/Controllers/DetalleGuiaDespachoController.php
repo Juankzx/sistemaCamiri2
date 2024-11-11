@@ -6,6 +6,7 @@ use App\Models\DetalleGuiaDespacho;
 use App\Models\GuiaDespacho;
 use App\Models\Producto;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DetalleGuiaDespachoController extends Controller
 {
@@ -30,23 +31,28 @@ class DetalleGuiaDespachoController extends Controller
             'precio_compra' => 'required|numeric|min:0',
         ]);
 
-        $guiaDespacho = GuiaDespacho::findOrFail($guiaDespachoId);
+        try {
+            DB::beginTransaction();
 
-        $subtotal = $request->cantidad_entregada * $request->precio_compra;
+            $guiaDespacho = GuiaDespacho::findOrFail($guiaDespachoId);
+            $subtotal = $request->cantidad_entregada * $request->precio_compra;
 
-        DetalleGuiaDespacho::create([
-            'guia_despacho_id' => $guiaDespachoId,
-            'producto_id' => $request->producto_id,
-            'cantidad_entregada' => $request->cantidad_entregada,
-            'precio_compra' => $request->precio_compra,
-            'subtotal' => $subtotal,
-        ]);
+            DetalleGuiaDespacho::create([
+                'guia_despacho_id' => $guiaDespachoId,
+                'producto_id' => $request->producto_id,
+                'cantidad_entregada' => $request->cantidad_entregada,
+                'precio_compra' => $request->precio_compra,
+                'subtotal' => $subtotal,
+            ]);
 
-        // Actualizar el total de la guía de despacho
-        $guiaDespacho->total += $subtotal;
-        $guiaDespacho->save();
+            $guiaDespacho->increment('total', $subtotal);
 
-        return redirect()->route('detalles_guias_despacho.index', $guiaDespachoId)->with('success', 'Detalle de la Guía de Despacho agregado correctamente.');
+            DB::commit();
+            return redirect()->route('detalles_guias_despacho.index', $guiaDespachoId)->with('success', 'Detalle de la Guía de Despacho agregado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error al agregar el detalle: ' . $e->getMessage());
+        }
     }
 
     public function edit($id)
@@ -64,36 +70,48 @@ class DetalleGuiaDespachoController extends Controller
             'precio_compra' => 'required|numeric|min:0',
         ]);
 
-        $detalle = DetalleGuiaDespacho::findOrFail($id);
-        $guiaDespacho = $detalle->guiaDespacho;
+        try {
+            DB::beginTransaction();
 
-        $subtotalAnterior = $detalle->subtotal;
-        $subtotalNuevo = $request->cantidad_entregada * $request->precio_compra;
+            $detalle = DetalleGuiaDespacho::findOrFail($id);
+            $guiaDespacho = $detalle->guiaDespacho;
 
-        $detalle->update([
-            'producto_id' => $request->producto_id,
-            'cantidad_entregada' => $request->cantidad_entregada,
-            'precio_compra' => $request->precio_compra,
-            'subtotal' => $subtotalNuevo,
-        ]);
+            $subtotalAnterior = $detalle->subtotal;
+            $subtotalNuevo = $request->cantidad_entregada * $request->precio_compra;
 
-        // Actualizar el total de la guía de despacho
-        $guiaDespacho->total += ($subtotalNuevo - $subtotalAnterior);
-        $guiaDespacho->save();
+            $detalle->update([
+                'producto_id' => $request->producto_id,
+                'cantidad_entregada' => $request->cantidad_entregada,
+                'precio_compra' => $request->precio_compra,
+                'subtotal' => $subtotalNuevo,
+            ]);
 
-        return redirect()->route('detalles_guias_despacho.index', $guiaDespacho->id)->with('success', 'Detalle de la Guía de Despacho actualizado correctamente.');
+            $guiaDespacho->increment('total', $subtotalNuevo - $subtotalAnterior);
+
+            DB::commit();
+            return redirect()->route('detalles_guias_despacho.index', $guiaDespacho->id)->with('success', 'Detalle de la Guía de Despacho actualizado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error al actualizar el detalle: ' . $e->getMessage());
+        }
     }
 
     public function destroy($id)
     {
-        $detalle = DetalleGuiaDespacho::findOrFail($id);
-        $guiaDespacho = $detalle->guiaDespacho;
+        try {
+            DB::beginTransaction();
 
-        $guiaDespacho->total -= $detalle->subtotal;
-        $guiaDespacho->save();
+            $detalle = DetalleGuiaDespacho::findOrFail($id);
+            $guiaDespacho = $detalle->guiaDespacho;
 
-        $detalle->delete();
+            $guiaDespacho->decrement('total', $detalle->subtotal);
+            $detalle->delete();
 
-        return redirect()->route('detalles_guias_despacho.index', $guiaDespacho->id)->with('success', 'Detalle de la Guía de Despacho eliminado correctamente.');
+            DB::commit();
+            return redirect()->route('detalles_guias_despacho.index', $guiaDespacho->id)->with('success', 'Detalle de la Guía de Despacho eliminado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error al eliminar el detalle: ' . $e->getMessage());
+        }
     }
 }

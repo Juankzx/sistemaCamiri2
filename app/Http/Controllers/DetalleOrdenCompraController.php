@@ -4,62 +4,105 @@ namespace App\Http\Controllers;
 
 use App\Models\DetalleOrdenCompra;
 use App\Models\OrdenCompra;
+use App\Models\Producto;
 use Illuminate\Http\Request;
 
 class DetalleOrdenCompraController extends Controller
 {
+    /**
+     * Muestra todos los detalles de órdenes de compra.
+     */
     public function index()
     {
-        $detalles = DetalleOrdenCompra::all();
+        $detalles = DetalleOrdenCompra::with('ordenCompra', 'producto')->get();
         return view('detalles.index', compact('detalles'));
     }
 
+    /**
+     * Muestra el formulario para crear un nuevo detalle.
+     */
     public function create()
     {
-        return view('detalles.create');
+        $ordenesCompra = OrdenCompra::all();
+        $productos = Producto::all();
+        return view('detalles.create', compact('ordenesCompra', 'productos'));
     }
 
+    /**
+     * Almacena un nuevo detalle de orden de compra.
+     */
     public function store(Request $request)
     {
-        // Validar sin precio_compra, ya que se gestionará en la guía de despacho
         $validatedData = $request->validate([
             'orden_compra_id' => 'required|exists:ordenes_compras,id',
             'producto_id' => 'required|exists:productos,id',
             'cantidad' => 'required|integer|min:1',
-            'inventario_id' => 'required|exists:inventarios,id',  
         ]);
 
-        DetalleOrdenCompra::create($validatedData);
-        return redirect()->route('detalles.index')->with('success', 'Detalle de orden de compra creado con éxito.');
+        $detalle = new DetalleOrdenCompra([
+            'orden_compra_id' => $validatedData['orden_compra_id'],
+            'producto_id' => $validatedData['producto_id'],
+            'cantidad' => $validatedData['cantidad'],
+            'subtotal' => 0,  // Esto se calculará en una etapa posterior
+        ]);
+        
+        $detalle->save();
+
+        return redirect()->route('ordenes.detalles.index', $validatedData['orden_compra_id'])
+            ->with('success', 'Detalle de orden de compra creado con éxito.');
     }
 
-    public function show(DetalleOrdenCompra $detalle)
+    /**
+     * Muestra un detalle de orden de compra específico.
+     */
+    public function show($id)
     {
+        $detalle = DetalleOrdenCompra::with('ordenCompra', 'producto')->findOrFail($id);
         return view('detalles.show', compact('detalle'));
     }
 
-    public function edit(DetalleOrdenCompra $detalle)
+    /**
+     * Muestra el formulario para editar un detalle específico.
+     */
+    public function edit($id)
     {
-        return view('detalles.edit', compact('detalle'));
+        $detalle = DetalleOrdenCompra::findOrFail($id);
+        $productos = Producto::all();
+        return view('detalles.edit', compact('detalle', 'productos'));
     }
 
-    public function update(Request $request, DetalleOrdenCompra $detalle)
+    /**
+     * Actualiza un detalle de orden de compra específico.
+     */
+    public function update(Request $request, $id)
     {
-        // Actualizar sin campo precio_compra
+        $detalle = DetalleOrdenCompra::findOrFail($id);
+
         $validatedData = $request->validate([
-            'orden_compra_id' => 'required|exists:ordenes_compras,id',
             'producto_id' => 'required|exists:productos,id',
             'cantidad' => 'required|integer|min:1',
-            'inventario_id' => 'required|exists:inventarios,id',  
         ]);
 
-        $detalle->update($validatedData);
-        return redirect()->route('detalles.index')->with('success', 'Detalle de orden de compra actualizado con éxito.');
+        $detalle->update([
+            'producto_id' => $validatedData['producto_id'],
+            'cantidad' => $validatedData['cantidad'],
+        ]);
+
+        return redirect()->route('ordenes.detalles.index', $detalle->orden_compra_id)
+            ->with('success', 'Detalle de orden de compra actualizado con éxito.');
     }
 
-    public function destroy(DetalleOrdenCompra $detalle)
+    /**
+     * Elimina un detalle de orden de compra específico.
+     */
+    public function destroy($id)
     {
+        $detalle = DetalleOrdenCompra::findOrFail($id);
+        $ordenId = $detalle->orden_compra_id;
+
         $detalle->delete();
-        return redirect()->route('detalles.index')->with('success', 'Detalle de orden de compra eliminado con éxito.');
+
+        return redirect()->route('ordenes.detalles.index', $ordenId)
+            ->with('success', 'Detalle de orden de compra eliminado con éxito.');
     }
 }

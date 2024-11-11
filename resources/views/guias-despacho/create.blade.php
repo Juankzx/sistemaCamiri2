@@ -1,57 +1,37 @@
 @extends('adminlte::page')
 
-@section('title', 'Crear Guía de Despacho')
+@section('title', 'Agregar Inventario')
 
 @section('content')
 <div class="container">
-    <h1>Crear Guía de Despacho</h1>
-    <form action="{{ route('guias-despacho.store') }}" method="POST">
+    <h1>Agregar Inventario</h1>
+    <form id="inventarioForm" action="{{ route('inventarios.storeMultiple') }}" method="POST">
         @csrf
-        <!-- Número de Guía -->
+
+        <!-- Buscador de productos en vivo -->
         <div class="form-group">
-            <label for="numero_guia">Número de Guía</label>
-            <input type="text" class="form-control" id="numero_guia" name="numero_guia" required>
+            <label for="buscarProducto">Buscar Producto</label>
+            <input type="text" class="form-control mb-2" id="buscarProducto" placeholder="Escriba para buscar un producto..." oninput="filtrarProductos()">
+            <ul id="listaProductos" class="list-group mb-3" style="background-color: #f5f5f5; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto;">
+                <!-- Lista de productos para seleccionar -->
+            </ul>
         </div>
 
-        <!-- Fecha de Entrega -->
-        <div class="form-group">
-            <label for="fecha_entrega">Fecha de Entrega</label>
-            <input type="date" class="form-control" id="fecha_entrega" name="fecha_entrega" required>
-        </div>
-
-        <!-- Selección de Orden de Compra -->
-        <div class="form-group">
-            <label for="orden_compra_id">Orden de Compra</label>
-            <select class="form-control" id="orden_compra_id" name="orden_compra_id" required>
-                <option value="" disabled selected>Seleccione una Orden de Compra</option>
-                @foreach($ordenCompra as $orden)
-                    <option value="{{ $orden->id }}">
-                        N°: {{ $orden->numero_orden }} 
-                        - Proveedor: {{ $orden->proveedor->nombre }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        <!-- Estado -->
-        <div class="form-group">
-            <label for="estado">Estado</label>
-            <input type="text" class="form-control" id="estado" name="estado" value="emitida" readonly>
-        </div>
-        
-        <!-- Detalles de la Guía de Despacho -->
+        <!-- Detalles del Inventario -->
         <div class="card mt-3">
-            <div class="card-header">
-                <h4>Detalles de la Orden de Compra</h4>
+            <div class="card-header bg-primary text-white">
+                <h4>Detalles del Inventario</h4>
             </div>
             <div class="card-body">
                 <table class="table table-bordered" id="detalles-table">
                     <thead>
                         <tr>
                             <th>Producto</th>
-                            <th>Cantidad Entregada</th>
-                            <th>Precio Compra</th>
-                            <th>Subtotal</th>
+                            <th>Bodega</th>
+                            <th>Cantidad</th>
+                            <th>Stock Mínimo</th>
+                            <th>Stock Crítico</th>
+                            <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,15 +41,8 @@
             </div>
         </div>
 
-        <!-- Total -->
-        <div class="card mt-3">
-            <div class="card-body">
-                <h4>Total: <span id="total">$0</span></h4>
-            </div>
-        </div>
-
         <!-- Botón de Guardar -->
-        <button type="submit" class="btn btn-primary mt-3">Guardar Guía</button>
+        <button type="submit" class="btn btn-primary mt-3">Guardar Inventario</button>
     </form>
 </div>
 @endsection
@@ -92,65 +65,83 @@
 
 @section('js')
 <script>
-    document.getElementById('orden_compra_id').addEventListener('change', function() {
-        var ordenCompraId = this.value;
+    // Cargar productos disponibles
+    const productos = [
+        @foreach($productos as $producto)
+            {
+                id: "{{ $producto->id }}",
+                nombre: "{{ $producto->nombre }}",
+                codigo_barra: "{{ $producto->codigo_barra }}"
+            },
+        @endforeach
+    ];
+
+    // Filtrar productos disponibles según la búsqueda
+    function filtrarProductos() {
+        const query = document.getElementById('buscarProducto').value.toLowerCase();
+        const lista = document.getElementById('listaProductos');
+        lista.innerHTML = '';
         
-        // Hacer la solicitud AJAX para obtener los detalles de la orden de compra
-        fetch('/api/ordenes-compra/' + ordenCompraId)
-            .then(response => response.json())
-            .then(data => {
-                var tbody = document.querySelector('#detalles-table tbody');
-                tbody.innerHTML = '';  // Limpiar tabla
-
-                // Iterar sobre los detalles de la orden de compra
-                data.detalles.forEach((detalle, index) => {
-                    var precioCompra = parseFloat(detalle.precio_compra) || 0;  // Asegurar que sea un número
-                    var subtotal = detalle.cantidad * precioCompra;
-
-                    var row = `
-                        <tr>
-                            <td>
-                                ${detalle.producto.nombre}
-                                <input type="hidden" name="detalles[${index}][producto_id]" value="${detalle.producto_id}">
-                            </td>
-                            <td>
-                                <input type="number" class="form-control" name="detalles[${index}][cantidad_entregada]" value="${detalle.cantidad}" oninput="updateSubtotal(${index})" required>
-                            </td>
-                            <td>
-                                <input type="number" class="form-control" name="detalles[${index}][precio_compra]" value="${precioCompra}" oninput="updateSubtotal(${index})" required>
-                            </td>
-                            <td>
-                                <input type="number" class="form-control subtotal" name="detalles[${index}][subtotal]" value="${subtotal}" readonly>
-                            </td>
-                        </tr>
-                    `;
-                    tbody.insertAdjacentHTML('beforeend', row);
-                });
-
-                updateTotal();  // Actualizar el total después de cargar los productos
-            });
-    });
-
-    // Función para actualizar los subtotales
-    function updateSubtotal(index) {
-        const cantidad = parseFloat(document.querySelector(`[name="detalles[${index}][cantidad_entregada]"]`).value) || 0;
-        const precioCompra = parseFloat(document.querySelector(`[name="detalles[${index}][precio_compra]"]`).value) || 0;
-        const subtotalField = document.querySelector(`[name="detalles[${index}][subtotal]"]`);
-
-        const subtotal = cantidad * precioCompra;
-        subtotalField.value = subtotal.toFixed(0); // Actualizar el subtotal en la tabla
-
-        updateTotal();  // Actualizar el total después de cada cambio
+        const productosFiltrados = productos.filter(p => p.nombre.toLowerCase().includes(query) || p.codigo_barra.includes(query));
+        
+        productosFiltrados.forEach(producto => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item list-group-item-action';
+            li.innerHTML = `${producto.nombre} - ${producto.codigo_barra}`;
+            li.onclick = () => agregarProducto(producto);
+            lista.appendChild(li);
+        });
     }
 
-    // Función para actualizar el total general
-    function updateTotal() {
-        const subtotales = document.querySelectorAll('.subtotal');
-        let total = 0;
-        subtotales.forEach(subtotal => {
-            total += parseFloat(subtotal.value) || 0;
-        });
-        document.getElementById('total').innerText = `$${total.toFixed(0)}`;
+    // Agregar producto a la tabla de detalles
+    function agregarProducto(producto) {
+        const tbody = document.querySelector('#detalles-table tbody');
+        const productoExiste = Array.from(tbody.querySelectorAll('input[name^="detalles"]')).some(input => input.value == producto.id);
+
+        if (productoExiste) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Producto duplicado',
+                text: 'El producto ya está en la lista de inventario.',
+                confirmButtonColor: '#3085d6'
+            });
+            return;
+        }
+
+        const index = tbody.children.length;
+        const row = `
+            <tr class="product-row">
+                <td>
+                    <input type="hidden" name="detalles[${index}][producto_id]" value="${producto.id}" required>
+                    <input type="text" class="form-control" name="detalles[${index}][producto_nombre]" value="${producto.nombre}" readonly required>
+                </td>
+                <td>
+                    <input type="text" class="form-control" name="detalles[${index}][bodega]" value="Bodega General" required>
+                </td>
+                <td>
+                    <input type="number" class="form-control" name="detalles[${index}][cantidad]" min="1" placeholder="Cantidad" value="1" required>
+                </td>
+                <td>
+                    <input type="number" class="form-control" name="detalles[${index}][stock_minimo]" min="0" placeholder="Stock Mínimo" value="0" required>
+                </td>
+                <td>
+                    <input type="number" class="form-control" name="detalles[${index}][stock_critico]" min="0" placeholder="Stock Crítico" value="0" required>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', row);
+        document.getElementById('buscarProducto').value = '';
+        document.getElementById('listaProductos').innerHTML = '';
+    }
+
+    // Eliminar fila de la tabla
+    function removeRow(button) {
+        button.closest('tr').remove();
     }
 </script>
 @endsection

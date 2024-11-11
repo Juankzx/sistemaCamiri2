@@ -219,6 +219,31 @@ public function getProductosPorSucursal($sucursalId)
     return response()->json($productos->items());
 }
 
+public function buscar(Request $request)
+    {
+        $query = $request->input('query');
+
+        // Filtrar productos que coincidan con el término de búsqueda
+        $productos = Producto::where('nombre', 'LIKE', "%$query%")
+            ->orWhere('codigo_barra', 'LIKE', "%$query%")
+            ->with('categoria') // Asegúrate de cargar la categoría si deseas mostrarla
+            ->limit(10) // Limitar la cantidad de resultados
+            ->get();
+
+        // Formatear los productos para la respuesta JSON
+        $productosFormateados = $productos->map(function ($producto) {
+            return [
+                'id' => $producto->id,
+                'nombre' => $producto->nombre,
+                'codigo_barra' => $producto->codigo_barra,
+                'categoria' => $producto->categoria->nombre ?? 'Sin categoría'
+            ];
+        });
+
+        return response()->json($productosFormateados);
+    }
+
+
 
 
 

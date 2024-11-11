@@ -11,6 +11,7 @@ use App\Models\GuiaDespacho;
 use App\Models\Movimiento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 
 class OrdenCompraController extends Controller
@@ -27,9 +28,8 @@ class OrdenCompraController extends Controller
     public function create()
     {
         $proveedores = Proveedore::all();
-        $productos = Producto::all();  // Se asume que todos los productos están disponibles
-        $ultimoNumeroOrden = OrdenCompra::max('numero_orden') ?? 0;
-        $nuevoNumeroOrden = $ultimoNumeroOrden + 1;
+        $productos = Producto::all();
+        $nuevoNumeroOrden = $this->generateOrderNumber();
 
         return view('ordenes.create', compact('proveedores', 'productos', 'nuevoNumeroOrden'));
     }
@@ -54,13 +54,14 @@ class OrdenCompraController extends Controller
                 'orden_compra_id' => $orden->id,
                 'producto_id' => $detalle['producto_id'],
                 'cantidad' => $detalle['cantidad'],
-                'precio_compra' => 0,  // Se establecerá en la Guía de Despacho
-                'subtotal' => 0,       // Se actualizará más tarde
+                'precio_compra' => 0,
+                'subtotal' => 0,
             ]);
         }
 
         return redirect()->route('ordenes.index')->with('success', 'Orden de Compra creada exitosamente.');
     }
+
     public function destroy($id)
 {
     try {
@@ -81,4 +82,23 @@ class OrdenCompraController extends Controller
         return redirect()->route('ordenes.index')->with('error', 'No se pudo eliminar la orden de compra: ' . $e->getMessage());
     }
 }
+
+// Método para generar un número de orden único
+private function generateOrderNumber()
+{
+    $ultimoNumeroOrden = OrdenCompra::max('numero_orden') ?? 0;
+    return $ultimoNumeroOrden + 1;
+}
+
+public function exportarPdf($id)
+{
+    $orden = OrdenCompra::with(['proveedor', 'detalles.producto'])->findOrFail($id);
+
+    // Cargar una vista específica para el PDF y pasarle los datos
+    $pdf = \PDF::loadView('ordenes.pdf', compact('orden'));
+
+    // Descargar el archivo PDF
+    return $pdf->stream('orden_compra_' . $orden->numero_orden . '.pdf');
+}
+
 }

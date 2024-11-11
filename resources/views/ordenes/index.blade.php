@@ -44,7 +44,6 @@
                         <th>Proveedor</th>
                         <th>Fecha</th>
                         <th>Estado</th>
-                        
                         <th style="width: 30%;">Acciones</th>
                     </tr>
                 </thead>
@@ -55,7 +54,7 @@
                         <td>{{ $orden->proveedor->nombre }} - {{ $orden->proveedor->rut }}</td>
                         <td>{{ $orden->created_at->format('d/m/Y H:i:s') }}</td>
                         <td class="text-center">
-                            <span class="badge {{ $orden->estado == 'solicitado' ? 'bg-danger' : ($orden->estado == 'entregado' ? 'bg-success' : ($orden->estado == 'en_transito' ? 'bg-warning' : 'bg-secondary')) }}">
+                            <span class="badge {{ $orden->estado == 'solicitado' ? 'bg-danger' : ($orden->estado == 'entregado' ? 'bg-success' : ($orden->estado == 'en_transito' ? 'bg-warning' : 'bg-secondary') ) }}">
                                 {{ $orden->estado }}
                             </span>
                         </td>
@@ -66,6 +65,9 @@
                             <a href="{{ route('ordenes-compras.edit', $orden) }}" class="btn btn-sm btn-info">
                                 <i class="fa fa-fw fa-edit"></i>
                             </a>
+                            <a href="{{ route('ordenes-compras.exportarPdf', $orden->id) }}" class="btn btn-sm btn-danger" target="_blank">
+                                <i class="fa fa-fw fa-file-pdf"></i>
+                            </a>
                             <form action="{{ route('ordenes-compras.destroy', $orden) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('¿Está seguro de que desea eliminar esta orden de compra? Esta acción no se puede deshacer.');">
                                 @csrf
                                 @method('DELETE')
@@ -73,8 +75,6 @@
                                     <i class="fa fa-fw fa-trash"></i>
                                 </button>
                             </form>
-
-                            
                         </td>
                     </tr>
                     @endforeach
@@ -91,7 +91,7 @@
                     </p>
                 </div>
                 <div>
-                    {{ $ordenes->links('pagination::bootstrap-4') }} <!-- Estilo Bootstrap 4 para la paginación -->
+                    {{ $ordenes->links('pagination::bootstrap-4') }}
                 </div>
             @else
                 <div class="col-12 text-center">
@@ -102,4 +102,35 @@
 
     </div>
 </div>
+@stop
+
+@section('js')
+<script>
+    // Filtrado en vivo para el nombre del proveedor
+    document.getElementById('searchProveedor').addEventListener('input', function() {
+        let query = this.value.toLowerCase();
+        document.querySelectorAll('#ordenesTableBody tr').forEach(row => {
+            const proveedor = row.children[1].innerText.toLowerCase();
+            row.style.display = proveedor.includes(query) ? '' : 'none';
+        });
+    });
+
+    // Filtrado en vivo para el estado
+    document.getElementById('searchEstado').addEventListener('change', function() {
+        let estado = this.value.toLowerCase();
+        document.querySelectorAll('#ordenesTableBody tr').forEach(row => {
+            const estadoRow = row.children[3].innerText.toLowerCase();
+            row.style.display = !estado || estadoRow.includes(estado) ? '' : 'none';
+        });
+    });
+
+    // Filtrado en vivo para la fecha
+    document.getElementById('searchFecha').addEventListener('input', function() {
+        let fecha = this.value;
+        document.querySelectorAll('#ordenesTableBody tr').forEach(row => {
+            const fechaRow = row.children[2].innerText;
+            row.style.display = fecha && !fechaRow.includes(fecha) ? 'none' : '';
+        });
+    });
+</script>
 @stop

@@ -11,6 +11,8 @@
     <div class="row mb-2">
         <div class="col-sm-12">
             <a href="{{ route('inventarios.create') }}" class="btn btn-primary mb-2">Agregar Inventario +</a>
+            <button class="btn btn-secondary mb-2" data-toggle="modal" data-target="#transferirMasivoModal">Transferir Masivo</button>
+
         </div>
     </div>
 
@@ -140,6 +142,7 @@
     @include('modals.incrementar')
     @include('modals.decrementar')
     @include('modals.transferirsucursal')
+    @include('modals.transferirMasivoModal')
 @stop
 
 @section('js')

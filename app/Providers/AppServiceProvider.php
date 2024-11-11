@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
+
     public function boot()
 {
     View::composer('*', function ($view) {

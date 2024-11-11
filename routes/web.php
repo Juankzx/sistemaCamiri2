@@ -23,10 +23,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\ConfiguracionController;
-use ConsoleTVs\Charts\Facades\Charts;
-use Chartisan\PHP\Chartisan;
 use App\Http\Controllers\HomeController;
-
 
 // Ruta pública de login
 Route::get('/', function () {
@@ -45,83 +42,59 @@ Route::post('register', [RegisterController::class, 'register'])->middleware('gu
 
 // Rutas protegidas
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/home', [HomeController::class, 'index'])->name('home');
-
     Route::resource('productos', ProductoController::class);
     Route::resource('inventarios', InventarioController::class);
 });
 
+// Rutas de recursos
+Route::resource('categorias', CategoriaController::class)->middleware('auth');
+Route::resource('proveedores', ProveedoreController::class)->middleware('auth');
+Route::resource('sucursales', SucursaleController::class)->middleware('auth');
+Route::resource('metodos-pagos', MetodoPagoController::class)->middleware('auth');
+Route::resource('bodegas', BodegaController::class)->middleware('auth');
+Route::resource('movimientos', MovimientoController::class)->middleware('auth');
+Route::resource('facturas', FacturaController::class)->middleware('auth');
+Route::resource('unidades', \App\Http\Controllers\UnidadMedidaController::class)->middleware('auth');
 
-
-
-Route::resource('categorias', App\Http\Controllers\CategoriaController::class)->middleware('auth');
-Route::resource('proveedores', App\Http\Controllers\ProveedoreController::class)->middleware('auth');
-Route::resource('ivas', App\Http\Controllers\IvaController::class)->middleware('auth');
-Route::resource('sucursales', App\Http\Controllers\SucursaleController::class)->middleware('auth');
-Route::resource('metodos-pagos', App\Http\Controllers\MetodosPagoController::class)->middleware('auth');
-Route::resource('cajas', App\Http\Controllers\CajaController::class)->middleware('auth');
-Route::resource('productos', App\Http\Controllers\ProductoController::class)->middleware('auth');
-Route::resource('pedidos', App\Http\Controllers\PedidoController::class)->middleware('auth');
-Route::resource('ventas', App\Http\Controllers\VentaController::class)->middleware('auth');
-Route::resource('detalles-venta', App\Http\Controllers\DetallesVentumController::class)->middleware('auth');
-Route::resource('inventarios', InventarioController::class)->middleware('auth');
-Route::post('/inventarios/incrementar/{id}', [InventarioController::class, 'incrementarBodega'])->name('inventarios.incrementar');
-Route::post('/inventarios/decrementar/{id}', [InventarioController::class, 'decrementarBodega'])->name('inventarios.decrementar');
-Route::post('/inventarios/transferir/{id}', [InventarioController::class, 'transferirASucursal'])->name('inventarios.transferir');
-Route::get('/api/check-producto-bodega-general/{productoId}', [OrdenCompraController::class, 'checkProductoEnBodegaGeneral']);
-//Route::get('/ventas/{venta}/print', [VentaController::class, 'print'])->name('ventas.print');
-Route::get('/ventas/{id}/print', [VentaController::class, 'print'])->name('ventas.print');
-
-
-
-
-
-Route::resource('bodegas', App\Http\Controllers\BodegaController::class)->middleware('auth');
-Route::resource('movimientos', App\Http\Controllers\MovimientoController::class)->middleware('auth');
-Route::resource('ordenes-compras', App\Http\Controllers\OrdenCompraController::class)->middleware('auth');
-Route::resource('ordenes', App\Http\Controllers\OrdenCompraController::class)->middleware('auth');
-Route::get('/ordenes-compras/{id}/entregar', [OrdenCompraController::class, 'entregar'])->name('ordenes-compras.entregar');
-
-
-Route::get('/api/ordenes-compra/{id}', [GuiaDespachoController::class, 'getOrdenCompraDetails']);
-
-
-Route::resource('detalles-ordenes-compras', App\Http\Controllers\DetalleOrdenCompraController::class)->middleware('auth');
-Route::resource('guias-despacho', App\Http\Controllers\GuiaDespachoController::class)->middleware('auth');
-// Ruta API para obtener detalles de la guía de despacho
-Route::get('/api/guias-despacho/{id}/detalles', [GuiaDespachoController::class, 'getDetalles']);
-Route::get('api/guias-despacho/{id}', [FacturaController::class, 'getDetalles']);
-
-Route::get('guias-despacho/{id}/detalles', [GuiaDespachoController::class, 'getDetalles']);
-
-
-
-Route::resource('facturas', App\Http\Controllers\FacturaController::class)->middleware('auth');
-Route::resource('pagos', App\Http\Controllers\PagoController::class)->middleware('auth');
-Route::get('pagos/create', [PagoController::class, 'create'])->name('pagos.create');
-// Ruta API para consultar detalles de la factura (a través de PagoController)
-Route::get('/api/pagos/{id}/detalles', [PagoController::class, 'getFacturaDetalles']);
-
-// Ruta regular para obtener detalles de la factura a través del FacturaController (si es necesario)
-Route::get('/api/facturas/{id}/detalles', [FacturaController::class, 'getDetalles']);
-
-Route::resource('unidades', App\Http\Controllers\UnidadMedidaController::class)->middleware('auth');
-Route::get('ordenes-compras/{orden}', [OrdenCompraController::class, 'show'])->name('ordenes-compras.show');
-Route::post('ordenes-compras/store-completa', [OrdenCompraController::class, 'storeCompleta'])->name('ordenes-compras.store-completa');
-
+// Modulo Cajas
+Route::resource('cajas', CajaController::class)->middleware('auth');
 Route::get('cajas', [CajaController::class, 'index'])->name('cajas.index');
 Route::post('cajas/abrir', [CajaController::class, 'abrir'])->name('cajas.abrir');
 Route::post('cajas/cerrar/{id}', [CajaController::class, 'cerrar'])->name('cajas.cerrar');
-Route::get('/cajas/{id}', [CajaController::class, 'show'])->name('cajas.show');
-Route::get('/cajas/{id}/imprimir-boleta', [CajaController::class, 'imprimirBoleta'])->name('cajas.imprimir_boleta');
-Route::get('/ventas/{id}', [VentaController::class, 'show'])->name('ventas.show');
-Route::get('productos/sucursal/{id}', [App\Http\Controllers\VentaController::class, 'getProductosPorSucursal']);
-Route::get('productos/sucursal/{sucursalId}', [VentaController::class, 'productosPorSucursal']);
-Route::get('/productos/sucursal/{sucursal}', [ProductoController::class, 'getProductosPorSucursal']);
-// Ruta para buscar productos
-Route::get('/productos/search', [ProductoController::class, 'search'])->name('productos.search');
 
+// Modulo Ventas
+Route::resource('ventas', VentaController::class)->middleware('auth');
+Route::resource('detalles-venta', DetalleOrdenCompraController::class)->middleware('auth');
+Route::get('/ventas/{id}/print', [VentaController::class, 'print'])->name('ventas.print');
+
+// Modulo Producto
+Route::resource('productos', ProductoController::class)->middleware('auth');
+Route::get('/api/check-producto-bodega-general/{productoId}', [OrdenCompraController::class, 'checkProductoEnBodegaGeneral']);
+
+// Modulo Inventario
+Route::post('/inventarios/incrementar/{id}', [InventarioController::class, 'incrementarBodega'])->name('inventarios.incrementar');
+Route::post('/inventarios/decrementar/{id}', [InventarioController::class, 'decrementarBodega'])->name('inventarios.decrementar');
+Route::post('/inventarios/transferir/{id}', [InventarioController::class, 'transferirASucursal'])->name('inventarios.transferir');
+
+// Modulo Solicitud Pedido
+Route::resource('ordenes-compras', OrdenCompraController::class)->middleware('auth');
+Route::get('/ordenes-compras/{id}/entregar', [OrdenCompraController::class, 'entregar'])->name('ordenes-compras.entregar');
+Route::get('ordenes-compras/{id}/pdf', [OrdenCompraController::class, 'exportarPdf'])->name('ordenes-compras.exportarPdf');
+Route::get('/api/ordenes-compra/{id}', [GuiaDespachoController::class, 'getOrdenCompraDetails']);
+Route::resource('detalles-ordenes-compras', DetalleOrdenCompraController::class)->middleware('auth');
+Route::post('ordenes-compras/store-completa', [OrdenCompraController::class, 'storeCompleta'])->name('ordenes-compras.store-completa');
+
+// Modulo Guia Despacho
+Route::resource('guias-despacho', GuiaDespachoController::class)->middleware('auth');
+Route::get('/api/guias-despacho/{id}/detalles', [GuiaDespachoController::class, 'getDetalles']);
+
+// Modulo Pagos
+Route::resource('pagos', PagoController::class)->middleware('auth');
+Route::get('pagos/create', [PagoController::class, 'create'])->name('pagos.create');
+Route::get('/api/pagos/{id}/detalles', [PagoController::class, 'getFacturaDetalles']);
+
+// Modulo Reportes
 Route::prefix('reportes')->middleware('auth')->group(function () {
     Route::get('/ventas', [ReporteController::class, 'ventas'])->name('reportes.ventas');
     Route::get('/inventario', [ReporteController::class, 'inventario'])->name('reportes.inventario');
@@ -129,14 +102,7 @@ Route::prefix('reportes')->middleware('auth')->group(function () {
     Route::get('/financieros', [ReporteController::class, 'financieros'])->name('reportes.financieros');
 });
 
-
-Route::get('/configuracion', [ConfiguracionController::class, 'edit'])->name('configuracion.edit');
-Route::put('/configuracion', [ConfiguracionController::class, 'update'])->name('configuracion.update');
-
-Route::post('/inventarios/store-multiple', [InventarioController::class, 'storeMultiple'])->name('inventarios.storeMultiple');
-Route::post('/inventarios/check-producto', [InventarioController::class, 'checkProducto'])->name('inventarios.checkProducto');
-
-Route::resource('users', App\Http\Controllers\UserController::class)->middleware('auth');
-
-
-
+// Modulo Roles
+//Route::get('asignar-rol', [UserController::class, 'mostrarFormularioAsignarRol'])->name('asignarRolForm');
+//Route::resource('users', UserController::class)->middleware('auth');
+//Route::post('/asignar-rol', [UserController::class, 'asignarRol'])->name('asignar-rol');

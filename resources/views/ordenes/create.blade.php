@@ -37,7 +37,7 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="proveedor_id">Proveedor</label>
-                            <select class="form-control" id="proveedor_id" name="proveedor_id" required>
+                            <select class="form-control" id="proveedor_id" name="proveedor_id" required onchange="filtrarProductosPorProveedor()">
                                 <option value="">Seleccione un proveedor</option>
                                 @foreach($proveedores as $proveedor)
                                     <option value="{{ $proveedor->id }}">{{ $proveedor->nombre }}</option>
@@ -99,50 +99,59 @@
                 id: "{{ $producto->id }}",
                 nombre: "{{ $producto->nombre }}",
                 codigo_barra: "{{ $producto->codigo_barra }}",
-                categoria: "{{ $producto->categoria->nombre ?? 'Sin categoría' }}"
+                proveedor_id: "{{ $producto->proveedor->id ?? '' }}",
+                proveedor: "{{ $producto->proveedor->nombre ?? 'Sin Proveedor' }}"
             },
         @endforeach
     ];
 
     let productosAgregados = new Set();  // Para almacenar los productos agregados
 
-    // Cargar todos los productos en la lista inicial
-    function cargarProductos() {
-        const lista = document.getElementById('listaProductos');
-        lista.innerHTML = '';
-        
-        productos.forEach(producto => {
-            const li = document.createElement('li');
-            li.className = 'list-group-item list-group-item-action';
-            li.style.cursor = 'pointer';
-            li.innerHTML = `${producto.nombre} - ${producto.codigo_barra} - ${producto.categoria}`;
-            li.onclick = () => seleccionarProducto(producto);
-            lista.appendChild(li);
-        });
-    }
+    // Función para filtrar productos por proveedor seleccionado y limpiar productos previos
+    function filtrarProductosPorProveedor() {
+        const proveedorId = document.getElementById('proveedor_id').value;
 
-    // Filtrar productos en vivo mientras se escribe en el campo de búsqueda
-    function filtrarProductos() {
-        const query = document.getElementById('buscarProducto').value.toLowerCase();
+        // Limpiar la tabla de detalles y el conjunto de productos agregados
+        const detallesTable = document.querySelector('#detallesOrdenCompra tbody');
+        detallesTable.innerHTML = '';
+        productosAgregados.clear();
+
+        // Filtrar y mostrar productos según el proveedor seleccionado
         const lista = document.getElementById('listaProductos');
         lista.innerHTML = '';
 
-        const productosFiltrados = productos.filter(p => p.nombre.toLowerCase().includes(query));
+        const productosFiltrados = productos.filter(p => p.proveedor_id === proveedorId);
         
         productosFiltrados.forEach(producto => {
             const li = document.createElement('li');
             li.className = 'list-group-item list-group-item-action';
             li.style.cursor = 'pointer';
-            li.innerHTML = `${producto.nombre} - ${producto.codigo_barra} - ${producto.categoria}`;
+            li.innerHTML = `${producto.nombre} - ${producto.codigo_barra} - ${producto.proveedor}`;
             li.onclick = () => seleccionarProducto(producto);
             lista.appendChild(li);
         });
     }
 
-    // Llamar a cargarProductos() al cargar la página
-    document.addEventListener('DOMContentLoaded', cargarProductos);
+    // Función de búsqueda en vivo
+    function filtrarProductos() {
+        const query = document.getElementById('buscarProducto').value.toLowerCase();
+        const proveedorId = document.getElementById('proveedor_id').value;
+        const lista = document.getElementById('listaProductos');
+        lista.innerHTML = '';
 
-    // Función para seleccionar un producto de la lista y agregarlo a la tabla
+        const productosFiltrados = productos.filter(p => p.proveedor_id === proveedorId && p.nombre.toLowerCase().includes(query));
+        
+        productosFiltrados.forEach(producto => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item list-group-item-action';
+            li.style.cursor = 'pointer';
+            li.innerHTML = `${producto.nombre} - ${producto.codigo_barra} - ${producto.proveedor}`;
+            li.onclick = () => seleccionarProducto(producto);
+            lista.appendChild(li);
+        });
+    }
+
+    // Función para agregar producto a la tabla de detalles
     function seleccionarProducto(producto) {
         if (productosAgregados.has(producto.id)) {
             Swal.fire({
@@ -160,7 +169,7 @@
             <tr class="detail-group">
                 <td>
                     <input type="hidden" name="detalles[${index}][producto_id]" value="${producto.id}">
-                    ${producto.nombre} - ${producto.codigo_barra} - ${producto.categoria}
+                    ${producto.nombre} - ${producto.codigo_barra} - ${producto.proveedor}
                 </td>
                 <td>
                     <input type="number" class="form-control" name="detalles[${index}][cantidad]" required placeholder="Cantidad">
@@ -179,7 +188,7 @@
         filtrarProductos();
     }
 
-    // Función para eliminar un detalle de la tabla
+    // Función para eliminar un producto de la tabla de detalles
     function removeDetail(element) {
         const detailRow = element.closest('.detail-group');
         const productoId = detailRow.querySelector('input[type="hidden"]').value;

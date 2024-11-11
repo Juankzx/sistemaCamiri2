@@ -5,104 +5,82 @@ namespace App\Http\Controllers;
 use App\Models\Pago;
 use App\Models\Factura;
 use App\Models\MetodosPago;
-use App\Models\DetalleGuiaDespachoPago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PagoController extends Controller
 {
     public function index()
-{
-    // Ordenar los pagos por la fecha de creación en orden descendente
-    $pagos = Pago::orderBy('created_at', 'desc') // Ordenar por 'created_at'
-                 ->paginate(15);
-
-    // Obtener todos los métodos de pago
-    $metodoPago = MetodosPago::all();
-
-    // Retornar la vista con los datos
-    return view('pagos.index', compact('pagos', 'metodoPago'));
-}
+    {
+        $pagos = Pago::orderBy('created_at', 'desc')->paginate(15);
+        $metodoPago = MetodosPago::all();
+        return view('pagos.index', compact('pagos', 'metodoPago'));
+    }
 
     public function create()
     {
         $facturas = Factura::with('guiaDespacho.ordenCompra.detalles.producto', 'guiaDespacho.ordenCompra.proveedor')
-                       ->whereIn('estado_pago', ['pendiente', 'en_proceso'])
+                       ->where('estado_pago', 'pendiente')
                        ->get();
         $metodosPago = MetodosPago::all();
-
         return view('pagos.create', compact('facturas', 'metodosPago'));
     }
 
     public function store(Request $request)
-{
-    // Validación de datos
-    $validatedData = $request->validate([
-        'factura_id' => 'required|exists:facturas,id',
-        'monto' => 'required|numeric|min:0.01',
-        'fecha_pago' => 'required|date',
-        'estado_pago' => 'required|in:pendiente,pagado',
-        'metodo_pago_id' => 'required|exists:metodos_pagos,id',
-        'numero_transferencia' => 'nullable|string|max:255'
-    ]);
+    {
+        $validatedData = $request->validate([
+            'factura_id' => 'required|exists:facturas,id',
+            'monto' => 'required|numeric|min:0.01',
+            'fecha_pago' => 'required|date',
+            'estado_pago' => 'required|in:pendiente,pagado',
+            'metodo_pago_id' => 'required|exists:metodos_pagos,id',
+            'numero_transferencia' => 'nullable|string|max:255'
+        ]);
 
-    // Crear el pago
-    $pago = Pago::create([
-        'factura_id' => $validatedData['factura_id'],
-        'monto' => $validatedData['monto'],
-        'fecha_pago' => $validatedData['fecha_pago'],
-        'estado_pago' => $validatedData['estado_pago'],
-        'metodo_pago_id' => $validatedData['metodo_pago_id'],
-        'numero_transferencia' => $validatedData['numero_transferencia'] ?? null,
-    ]);
+        DB::beginTransaction();
 
-    // Actualizar estado de la factura
-    $factura = Factura::find($validatedData['factura_id']);
-    $factura->update(['estado_pago' => $validatedData['estado_pago']]);
+        try {
+            $pago = Pago::create($validatedData);
 
-    // Obtener la guía de despacho asociada a la factura
-    $guiaDespacho = $factura->guiaDespacho;
-    if ($guiaDespacho) {
-        // Obtener la orden de compra asociada a la guía de despacho
-        $ordenCompra = $guiaDespacho->ordenCompra;
+            // Actualizar estado de la factura
+            $factura = Factura::find($validatedData['factura_id']);
+            $montoPagado = $factura->pagos()->sum('monto');
 
-        if ($ordenCompra) {
-            // Cargar las facturas de la orden de compra como colección
-            $facturas = $ordenCompra->facturas;
+            if ($montoPagado >= $factura->monto_total) {
+                $factura->update(['estado_pago' => 'pagado']);
+            }
 
-            // Verificar si todas las facturas de la colección están pagadas
-            $todasFacturasPagadas = $facturas->every(function ($factura) {
-                return $factura->estado_pago === 'pagado';
-            });
+            // Actualizar estado de orden y guías de despacho si todas las facturas están pagadas
+            $guiaDespacho = $factura->guiaDespacho;
+            if ($guiaDespacho && $guiaDespacho->ordenCompra) {
+                $ordenCompra = $guiaDespacho->ordenCompra;
+                $todasFacturasPagadas = $ordenCompra->facturas->every(function ($factura) {
+                    return $factura->estado_pago === 'pagado';
+                });
 
-            // Si todas las facturas están pagadas, actualizar la orden y las guías
-            if ($todasFacturasPagadas) {
-                $ordenCompra->update(['estado' => 'entregado']);
-
-                // Cargar guías de despacho y verificar que no sea null antes de iterar
-                $ordenCompra->load('guiasDespacho'); // Asegura que la relación esté cargada
-                if ($ordenCompra->guiasDespacho) {
-                    foreach ($ordenCompra->guiasDespacho as $guia) {
-                        $guia->update(['estado' => 'entregada']);
-                    }
+                if ($todasFacturasPagadas) {
+                    $ordenCompra->update(['estado' => 'entregado']);
+                    $ordenCompra->guiasDespacho()->update(['estado' => 'entregada']);
                 }
             }
+
+            DB::commit();
+            return redirect()->route('pagos.index')->with('success', 'Pago registrado y estado actualizado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error al registrar el pago: ' . $e->getMessage());
         }
     }
 
-    return redirect()->route('pagos.index')->with('success', 'Pago registrado y estado de la orden de compra actualizado.');
-}
-  
-
     public function getFacturaDetalles($id)
-{
-    $factura = Factura::with('guiaDespacho.detallesGuiaDespacho.producto', 'guiaDespacho.ordenCompra.proveedor')
+    {
+        $factura = Factura::with('guiaDespacho.detalles.producto', 'guiaDespacho.ordenCompra.proveedor')
                       ->findOrFail($id);
 
-    return response()->json($factura);
-}
+        return response()->json($factura);
+    }
 
-
+    
     public function show(Pago $pago)
     {
         return view('pagos.show', compact('pago'));
@@ -124,15 +102,55 @@ class PagoController extends Controller
             'estado_pago' => 'required|in:pendiente,pagado'
         ]);
 
-        $validatedData['estado_pago'] = 'pagado'; // Asegurar que siempre sea "pagado"
-        $pago->update($validatedData);
+        DB::beginTransaction();
 
-        return redirect()->route('pagos.index')->with('success', 'Pago actualizado con éxito.');
+        try {
+            $pago->update($validatedData);
+
+            // Recalcular el estado de la factura
+            $factura = $pago->factura;
+            $montoPagado = $factura->pagos()->sum('monto');
+            $factura->update(['estado_pago' => $montoPagado >= $factura->monto_total ? 'pagado' : 'pendiente']);
+
+            // Recalcular estado de la orden de compra y guías de despacho si corresponde
+            $guiaDespacho = $factura->guiaDespacho;
+            if ($guiaDespacho && $guiaDespacho->ordenCompra) {
+                $ordenCompra = $guiaDespacho->ordenCompra;
+                $todasFacturasPagadas = $ordenCompra->facturas->every(function ($factura) {
+                    return $factura->estado_pago === 'pagado';
+                });
+
+                if ($todasFacturasPagadas) {
+                    $ordenCompra->update(['estado' => 'entregado']);
+                    $ordenCompra->guiasDespacho()->update(['estado' => 'entregada']);
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('pagos.index')->with('success', 'Pago actualizado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error al actualizar el pago: ' . $e->getMessage());
+        }
     }
 
     public function destroy(Pago $pago)
     {
-        $pago->delete();
-        return redirect()->route('pagos.index')->with('success', 'Pago eliminado con éxito.');
+        DB::beginTransaction();
+
+        try {
+            $factura = $pago->factura;
+            $pago->delete();
+
+            // Recalcular el estado de la factura
+            $montoPagado = $factura->pagos()->sum('monto');
+            $factura->update(['estado_pago' => $montoPagado >= $factura->monto_total ? 'pagado' : 'pendiente']);
+
+            DB::commit();
+            return redirect()->route('pagos.index')->with('success', 'Pago eliminado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error al eliminar el pago: ' . $e->getMessage());
+        }
     }
 }

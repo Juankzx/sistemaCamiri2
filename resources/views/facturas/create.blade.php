@@ -35,7 +35,7 @@
                                 <option value="" selected disabled>Seleccione la Guía de Despacho</option>
                                 @foreach($guiasDespacho as $guia)
                                     <option value="{{ $guia->id }}">
-                                        N°: {{ $guia->numero_guia }} - Proveedor: {{ $guia->ordenCompra->proveedor->nombre }}
+                                        N°: {{ $guia->numero_guia }} - Proveedor: {{ $guia->ordenCompra->proveedor->nombre ?? 'Sin Proveedor' }}
                                     </option>
                                 @endforeach
                             </select>
@@ -62,7 +62,7 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="total_factura">Total de la Factura</label>
-                            <input type="number" class="form-control" id="total_factura" name="monto_total" readonly>
+                            <input type="text" class="form-control" id="total_factura" name="monto_total" readonly>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -85,8 +85,11 @@
                     <thead>
                         <tr>
                             <th>Producto</th>
-                            <th>Cantidad</th>
-                            <th>Precio Compra</th>
+                            <th>Cantidad Solicitada</th>
+                            <th>Cantidad Entregada</th>
+                            <th>Precio Unitario</th>
+                            <th>% Dcto</th>
+                            <th>Descuento $</th>
                             <th>Subtotal</th>
                         </tr>
                     </thead>
@@ -94,6 +97,35 @@
                         <!-- Los detalles de los productos se cargarán aquí mediante AJAX -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Total, IVA y Subtotal -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h4>Resumen de Totales</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="subtotal_sin_iva">Total Neto</label>
+                            <input type="text" class="form-control" id="subtotal_sin_iva" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="iva">IVA (19%)</label>
+                            <input type="text" class="form-control" id="iva" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="total_con_iva">Total</label>
+                            <input type="text" class="form-control" id="total_con_iva" readonly>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -112,45 +144,34 @@ document.getElementById('guia_despacho_id').addEventListener('change', function(
         return;
     }
 
-    // Realizar la petición AJAX para obtener los detalles de la Guía de Despacho seleccionada
     fetch(`/api/facturas/${guiaDespachoId}/detalles`)
         .then(response => response.json())
         .then(data => {
-            console.log(data); // Agregar este para verificar la estructura completa de la respuesta
-
             if (data && data.detalles) {
                 const tbody = document.querySelector('#detalles_factura tbody');
                 tbody.innerHTML = ''; // Limpiar tabla de detalles
 
-                let totalFactura = 0;
-
-                // Iterar sobre los detalles de la guía y mostrarlos en la tabla
                 data.detalles.forEach(detalle => {
                     const precioCompra = parseFloat(detalle.precio_compra) || 0;
-                    const cantidad = parseFloat(detalle.cantidad_entregada) || 0;
-                    const subtotal = cantidad * precioCompra;
+                    const cantidadSolicitada = parseFloat(detalle.cantidad_solicitada) || 0;
+                    const cantidadEntregada = parseFloat(detalle.cantidad_entregada) || 0;
+                    const subtotal = cantidadEntregada * precioCompra;
 
                     const row = `
                         <tr>
                             <td>${detalle.producto.nombre}</td>
-                            <td><input type="number" class="form-control" value="${cantidad}" readonly></td>
-                            <td><input type="number" class="form-control" value="${precioCompra}" readonly></td>
-                            <td><input type="number" class="form-control" value="${subtotal}" readonly></td>
+                            <td><input type="text" class="form-control" value="${cantidadSolicitada}" readonly></td>
+                            <td><input type="text" class="form-control cantidad-entregada" value="${cantidadEntregada}" readonly></td>
+                            <td><input type="text" class="form-control precio-unitario" value="$${precioCompra.toFixed(0)}" readonly></td>
+                            <td><input type="text" class="form-control porcentaje-descuento" value="0" oninput="calcularDescuento(this)"></td>
+                            <td><input type="text" class="form-control valor-descuento" value="$0" oninput="calcularDescuento(this, true)"></td>
+                            <td><input type="text" class="form-control subtotal" value="$${subtotal.toFixed(0)}" readonly></td>
                         </tr>
                     `;
                     tbody.insertAdjacentHTML('beforeend', row);
-                    totalFactura += subtotal; // Calcular el total de la factura
                 });
 
-                // Mostrar el total de la factura en el campo correspondiente
-                document.getElementById('total_factura').value = totalFactura;
-
-                // Mostrar el proveedor
-                if (data.proveedor) {
-                    document.getElementById('proveedor').value = `${data.proveedor.nombre} - ${data.proveedor.rut}`;
-                } else {
-                    document.getElementById('proveedor').value = 'Proveedor no disponible';
-                }
+                actualizarTotales();
             } else {
                 console.error("Detalles de la factura no encontrados o mal estructurados");
             }
@@ -159,7 +180,44 @@ document.getElementById('guia_despacho_id').addEventListener('change', function(
             console.error('Error al cargar los detalles de la factura:', error);
         });
 });
+
+function calcularDescuento(element, esValor = false) {
+    const row = element.closest('tr');
+    const cantidadEntregada = parseFloat(row.querySelector('.cantidad-entregada').value) || 0;
+    const precioUnitario = parseFloat(row.querySelector('.precio-unitario').value.replace('$', '')) || 0;
+    let descuentoPorcentaje = parseFloat(row.querySelector('.porcentaje-descuento').value) || 0;
+    let descuentoValor = parseFloat(row.querySelector('.valor-descuento').value.replace('$', '')) || 0;
+
+    if (esValor) {
+        // Si el descuento en valor es editable, calcular el porcentaje en base al valor ingresado
+        descuentoPorcentaje = (descuentoValor / (cantidadEntregada * precioUnitario)) * 100;
+        row.querySelector('.porcentaje-descuento').value = descuentoPorcentaje.toFixed(0);
+    } else {
+        // Si el descuento en porcentaje es editable, calcular el valor en base al porcentaje ingresado
+        descuentoValor = (cantidadEntregada * precioUnitario) * (descuentoPorcentaje / 100);
+        row.querySelector('.valor-descuento').value = `$${descuentoValor.toFixed(0)}`;
+    }
+
+    // Calcular el subtotal con descuento aplicado
+    const subtotalConDescuento = (cantidadEntregada * precioUnitario) - descuentoValor;
+    row.querySelector('.subtotal').value = `$${subtotalConDescuento.toFixed(0)}`;
+
+    actualizarTotales();
+}
+
+function actualizarTotales() {
+    let totalConIva = 0;
+    document.querySelectorAll('.subtotal').forEach(subtotal => {
+        totalConIva += parseFloat(subtotal.value.replace('$', '')) || 0;
+    });
+
+    const subtotalSinIva = totalConIva / 1.19;
+    const iva = totalConIva - subtotalSinIva;
+
+    document.getElementById('subtotal_sin_iva').value = `$${subtotalSinIva.toFixed(0)}`;
+    document.getElementById('iva').value = `$${iva.toFixed(0)}`;
+    document.getElementById('total_con_iva').value = `$${totalConIva.toFixed(0)}`;
+    document.getElementById('total_factura').value = `$${totalConIva.toFixed(0)}`;
+}
 </script>
-
-
 @endsection

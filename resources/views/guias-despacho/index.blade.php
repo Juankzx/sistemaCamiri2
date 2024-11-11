@@ -9,7 +9,7 @@
     <table class="table">
         <thead>
             <tr>
-                <th>ID</th>
+                <th>N°</th>
                 <th>Número de Guía</th>
                 <th>Fecha de Entrega</th>
                 <th>Orden de Compra</th>
@@ -23,7 +23,7 @@
                 <td>{{ $guia->id }}</td>
                 <td>{{ $guia->numero_guia }}</td>
                 <td>{{ \Carbon\Carbon::parse($guia->fecha_entrega)->format('d/m/Y') }}</td>
-                <td>{{ $guia->ordenCompra->numero_orden }}</td>
+                <td>{{ $guia->ordenCompra ? $guia->ordenCompra->numero_orden : 'Sin orden de compra' }}</td>
                         <td class="text-center">
                             <span class="badge {{ $guia->estado == 'emitida' ? 'bg-danger' : ($guia->estado == 'en_transito' ? 'bg-warning' : 'bg-success') }}">
                                 {{ $guia->estado }}
