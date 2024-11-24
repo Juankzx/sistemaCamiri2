@@ -8,6 +8,18 @@ use Illuminate\Http\Request;
 
 class BodegaController extends Controller
 {
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole('bodeguero', 'vendedor')) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
+
+
     public function index()
     {
         $bodegas = Bodega::where('estado', true)->paginate(15);

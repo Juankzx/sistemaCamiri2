@@ -33,6 +33,7 @@
                         <th>#</th>
                         <th>Nombre</th>
                         <th>Email</th>
+                        <th>Rol</th>
                         <th class="text-center">Acciones</th>
                     </tr>
                 </thead>
@@ -42,6 +43,16 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $user->name }}</td>
                             <td>{{ $user->email }}</td>
+                            <td>
+                                <!-- Muestra todos los roles asignados al usuario -->
+                                @if ($user->roles->isNotEmpty())
+                                    @foreach ($user->roles as $role)
+                                        <span class="badge badge-info">{{ $role->name }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="text-muted">Sin rol asignado</span>
+                                @endif
+                            </td>
                             <td class="text-center">
                                 <a href="{{ route('users.edit', $user->id) }}" class="btn btn-success btn-sm" title="Editar">
                                     <i class="fa fa-edit"></i>

@@ -35,6 +35,8 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             // Asegúrate de que `LoadConfigFromDatabase` realmente existe
             \App\Http\Middleware\LoadConfigFromDatabase::class,
+            \App\Http\Middleware\DynamicMenuMiddleware::class,
+            \App\Http\Middleware\ConfigurarAdminLTE::class,
         ],
 
         'api' => [
@@ -60,5 +62,10 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'role' => \Spatie\Permission\Middlewares\RoleMiddleware::class,
+        'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
+        'role_or_permission' => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
+        'configurar.adminlte' => \App\Http\Middleware\ConfigurarAdminLTE::class,
+        'cajero' => \App\Http\Middleware\EnsureUserIsCajero::class,
     ];
 }

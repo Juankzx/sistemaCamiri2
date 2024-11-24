@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends($isVendedor ? 'layouts.app' : 'adminlte::page')
 
 @section('title', 'Gestión de Cajas')
 
@@ -21,15 +21,24 @@
                                 data-id="{{ $cajaAbierta->id }}" 
                                 data-ventas="{{ $montoVentas }}" 
                                 title="Cerrar Caja">
-                            <i class="fas fa-lock"></i>
+                            <i class="fas fa-lock"></i> Cerrar Caja
                         </button>
                     @else
-                        <!-- Botón de abrir caja en la cabecera -->
-                        <button class="btn btn-primary btn-sm float-right" data-toggle="modal" data-target="#abrirCajaModal">
-                            <i class="fas fa-cash-register"></i>
-                        </button>
+                        <!-- Botones para abrir caja y redirigir a ventas -->
+                        <div class="btn-group float-right">
+                            <button class="btn btn-primary btn-sm" onclick="$('#abrirCajaModal').modal('show')">
+                                <i class="fas fa-cash-register"></i> Abrir Caja
+                            </button>
+                            @if(auth()->user()->hasRole('vendedor'))
+                                <a href="{{ route('ventas.index') }}" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-shopping-cart"></i> Ventas
+                                </a>
+                            @endif
+                        </div>
                     @endif
+                    
                 </div>
+                
 
                 <!-- Campos de búsqueda en vivo -->
                 <div class="row mb-3 p-2">

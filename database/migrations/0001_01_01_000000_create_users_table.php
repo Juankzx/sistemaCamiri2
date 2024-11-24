@@ -18,6 +18,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->boolean('estado')->default(true); // Añadido campo 'estado' con valor por defecto 'true'
+            $table->integer('pin')->nullable()->unique(); // Campo para el PIN, único
             $table->rememberToken();
             $table->timestamps();
         });

@@ -11,6 +11,16 @@ use Illuminate\View\View;
 
 class ProveedoreController extends Controller
 {
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole(['bodeguero', 'vendedor'])) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
     /**
      * Display a listing of the resource.
      */
@@ -39,7 +49,7 @@ class ProveedoreController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255',
+            'nombre' => 'required|string|max:255|unique:proveedores,nombre',
             'rut' => [
                 'required',
                 'string',
@@ -47,6 +57,7 @@ class ProveedoreController extends Controller
                 'unique:proveedores,rut',
                 'regex:/^(\d{1,2}\.\d{3}\.\d{3}-[0-9kK]|\d{7,8}-[0-9kK])$/'
             ], // Validación para el formato con puntos y sin puntos
+            'razon_social' => 'nullable|string|max:255', // Nueva validación para razón social
             'direccion' => 'nullable|string|max:255',
             'telefono' => 'nullable|string|max:20|regex:/^[0-9]+$/',
             'email' => 'nullable|email|max:255',

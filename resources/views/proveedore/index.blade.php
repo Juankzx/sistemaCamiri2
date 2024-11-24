@@ -47,9 +47,9 @@
                                             <td>{{ $proveedores->firstItem() + $index }}</td>
                                             <td>{{ $proveedore->nombre }}</td>
                                             <td>{{ $proveedore->rut }}</td>
-                                            <td>{{ $proveedore->direccion }}</td>
-                                            <td>{{ $proveedore->telefono }}</td>
-                                            <td>{{ $proveedore->email }}</td>
+                                            <td>{{ $proveedore->direccion ?? 'N/A' }}</td>
+                                            <td>{{ $proveedore->telefono ?? 'N/A' }}</td>
+                                            <td>{{ $proveedore->email ?? 'N/A' }}</td>
                                             <td>
                                                 <a class="btn btn-sm btn-primary" href="{{ route('proveedores.show', $proveedore->id) }}"><i class="fa fa-fw fa-eye"></i></a>
                                                 <a class="btn btn-sm btn-success" href="{{ route('proveedores.edit', $proveedore->id) }}"><i class="fa fa-fw fa-edit"></i></a>

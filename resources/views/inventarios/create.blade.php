@@ -132,12 +132,7 @@
             productosSeleccionados.forEach(function(productoId) {
                 // Verificar si el producto ya existe en la tabla
                 if (productosEnTabla.includes(productoId)) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Producto ya agregado',
-                        text: 'El producto ya está en inventario. Seleccione otro producto.',
-                        confirmButtonColor: '#d33'
-                    });
+                    
                 } else {
                     // Añadir el producto al array de productos en la tabla
                     productosEnTabla.push(productoId);

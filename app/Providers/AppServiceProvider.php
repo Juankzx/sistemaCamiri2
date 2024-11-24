@@ -20,12 +20,11 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
 
-    public function boot()
-{
-    View::composer('*', function ($view) {
-        $configuracion = Configuracion::first();
-        $view->with('configuracion', $configuracion);
-    });
-}
+     public function boot()
+     {
+         View::composer('*', function ($view) {
+             $view->with('isVendedor', auth()->check() && auth()->user()->hasRole('vendedor'));
+         });
+     }
 
 }

@@ -32,7 +32,7 @@
                         <table class="table table-striped table-hover">
                             <thead class="thead">
                                 <tr>
-                                    <th>No</th>
+                                    <th>N°</th>
                                     <th>Nombre</th>
                                     <th>Descripción</th>
                                     <th>Estado</th>
@@ -44,7 +44,7 @@
                                     <tr>
                                         <td>{{ ++$i }}</td>
                                         <td>{{ $categoria->nombre }}</td>
-                                        <td>{{ $categoria->descripcion }}</td>
+                                        <td>{{ $categoria->descripcion ?? 'N/A' }}</td> <!-- Se agregó el operador ?? -->
                                         <td>{{ $categoria->estado ? 'Activo' : 'Inactivo' }}</td>
                                         <td>
                                             <a class="btn btn-sm btn-primary" href="{{ route('categorias.show', $categoria->id) }}"><i class="fa fa-fw fa-eye"></i></a>
@@ -59,7 +59,16 @@
                     </div>
                 </div>
             </div>
-            {!! $categorias->withQueryString()->links() !!}
+            <!-- Paginación e información de registros -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            <p class="small text-muted">
+                                Mostrando {{ $categorias->firstItem() }} a {{ $categorias->lastItem() }} de {{ $categorias->total() }} registros
+                            </p>
+                        </div>
+                        <div>
+                            {{ $categorias->links('pagination::bootstrap-4') }}
+                        </div>
         </div>
     </div>
 </div>
@@ -117,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <tr>
                         <td>${index + 1}</td>
                         <td>${categoria.nombre}</td>
-                        <td>${categoria.descripcion}</td>
+                        <td>{{ $categoria->descripcion ?? 'N/A' }}</td> <!-- Se agregó el operador ?? -->
                         <td>${categoria.estado ? 'Activo' : 'Inactivo'}</td>
                         <td>
                             <a class="btn btn-sm btn-primary" href="/categorias/${categoria.id}"><i class="fa fa-fw fa-eye"></i></a>

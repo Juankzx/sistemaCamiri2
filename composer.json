@@ -13,7 +13,8 @@
         "laravel/framework": "^11.9",
         "laravel/telescope": "^5.1",
         "laravel/tinker": "^2.9",
-        "laravel/ui": "^4.5"
+        "laravel/ui": "^4.5",
+        "spatie/laravel-permission": "^6.10"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.13",
@@ -30,7 +31,11 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        
+        "files": [
+        "app/Helpers/MenuHelper.php"
+    ]
     },
     "autoload-dev": {
         "psr-4": {

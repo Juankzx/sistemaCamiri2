@@ -7,9 +7,24 @@ use App\Models\Rol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole(['bodeguero', 'vendedor'])) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+
+    
+}
+
+
     // Muestra el listado de usuarios
     public function index()
 {
@@ -31,14 +46,20 @@ class UserController extends Controller
         'name' => 'required|string|max:255',
         'email' => 'required|string|email|max:255|unique:users',  // Valida que el email sea único en la tabla users
         'password' => 'required|string|min:8|confirmed',
+        'role' => 'required|string',
+        'pin' => 'nullable|integer|unique:users,pin|min:100000|max:999999',
     ]);
 
     // Crear el usuario en la base de datos
-    User::create([
+    $user = User::create([
         'name' => $request->name,
         'email' => $request->email,
         'password' => Hash::make($request->password),
+        'pin' => $request->role === 'vendedor' ? $request->pin : null,
     ]);
+
+    // Asignar el rol al usuario
+    $user->assignRole($request->role);
 
     // Redirigir al índice de usuarios con mensaje de éxito
     return redirect()->route('users.index')->with('success', 'Usuario creado exitosamente.');
@@ -89,6 +110,43 @@ class UserController extends Controller
 
     // Redirigir al índice de usuarios con mensaje de éxito
     return redirect()->route('users.index')->with('success', 'Usuario eliminado exitosamente.');
+}
+
+public function mostrarFormularioAsignarRol()
+{
+    $usuarios = User::all();
+    $roles = Role::all();
+    return view('roles_permisos.asignar_rol', compact('usuarios', 'roles'));
+}
+
+public function asignarRol(Request $request)
+{
+    $request->validate([
+        'usuario_id' => 'required|exists:users,id',
+        'rol_id' => 'required|exists:roles,id'
+    ]);
+
+    $usuario = User::findOrFail($request->usuario_id);
+    $rol = Role::findOrFail($request->rol_id);
+
+    // Asigna el rol al usuario
+    $usuario->syncRoles($rol->name);
+
+    return redirect()->back()->with('success', 'Rol asignado correctamente.');
+}
+
+public function removerRol(Request $request)
+{
+    $request->validate([
+        'usuario_id' => 'required|exists:users,id',
+    ]);
+
+    $usuario = User::findOrFail($request->usuario_id);
+
+    // Remover todos los roles del usuario
+    $usuario->syncRoles([]);
+
+    return redirect()->back()->with('success', 'Rol removido correctamente.');
 }
 
 }

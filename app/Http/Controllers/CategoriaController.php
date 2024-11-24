@@ -14,13 +14,25 @@ class CategoriaController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): View
-    {
-        $categorias = Categoria::where('estado', true)->paginate();
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole(['bodeguero', 'vendedor'])) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
 
-        return view('categoria.index', compact('categorias'))
-            ->with('i', ($request->input('page', 1) - 1) * $categorias->perPage());
-    }
+
+public function index(Request $request): View
+{
+    // Especifica 15 elementos por página
+    $categorias = Categoria::where('estado', true)->paginate(15);
+
+    return view('categoria.index', compact('categorias'))
+        ->with('i', ($request->input('page', 1) - 1) * 15); // Ajusta el cálculo para 15 elementos por página
+}
 
     /**
      * Show the form for creating a new resource.

@@ -14,6 +14,17 @@ class SucursaleController extends Controller
     /**
      * Display a listing of the resource.
      */
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole(['bodeguero', 'vendedor'])) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
+
     public function index(Request $request): View
     {
         // Solo mostrar sucursales activas
@@ -40,7 +51,7 @@ class SucursaleController extends Controller
 {
     $request->validate([
         'nombre' => 'required|string|max:255|unique:sucursales,nombre',
-        'direccion' => 'nullable|string|max:255'
+        'direccion' => 'required|string|max:255'
     ], [
         'nombre.unique' => 'El nombre de la sucursal ya existe. Por favor, elija un nombre diferente.'
     ]);

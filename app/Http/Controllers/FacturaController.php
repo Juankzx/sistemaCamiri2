@@ -10,6 +10,17 @@ use Illuminate\Http\Request;
 
 class FacturaController extends Controller
 {
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole('vendedor')) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
+
     public function index()
     {
         $facturas = Factura::with(['guiaDespacho.ordenCompra.proveedor'])
@@ -61,6 +72,11 @@ class FacturaController extends Controller
 
     public function edit(Factura $factura)
     {
+
+        if (auth()->user()->hasRole('bodeguero')) {
+            abort(403, 'No tienes permiso para editar este producto.');
+        }
+
         return view('facturas.edit', compact('factura'));
     }
 
@@ -87,6 +103,10 @@ class FacturaController extends Controller
 
     public function destroy(Factura $factura)
     {
+        if (auth()->user()->hasRole('bodeguero')) {
+            abort(403, 'No tienes permiso para editar este producto.');
+        }
+
         $factura->delete();
         return redirect()->route('facturas.index')->with('success', 'Factura eliminada con éxito.');
     }

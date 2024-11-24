@@ -23,6 +23,16 @@ use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
 
 class VentaController extends Controller
 {
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole('bodeguero')) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
     
     public function index()
 {
@@ -191,6 +201,10 @@ public function store(Request $request)
 
     public function edit(Venta $venta)
     {
+        if (auth()->user()->hasRole('vendedor')) {
+            abort(403, 'No tienes permiso para editar esta venta.');
+        }
+
         $metodosPago = MetodosPago::all();
         $sucursales = Sucursale::all();
         return view('ventas.edit', compact('venta', 'metodosPago', 'sucursales'));
@@ -198,11 +212,17 @@ public function store(Request $request)
 
     public function update(Request $request, Venta $venta)
     {
+        if (auth()->user()->hasRole('vendedor')) {
+            abort(403, 'No tienes permiso para editar esta venta.');
+        }
         // Lógica similar a store pero ajustando los detalles de la venta y el inventario correspondiente
     }
 
     public function destroy(Venta $venta)
     {
+        if (auth()->user()->hasRole('vendedor')) {
+            abort(403, 'No tienes permiso para editar esta venta.');
+        }
         $venta->delete();
         return redirect()->route('ventas.index')->with('success', 'Venta eliminada con éxito.');
     }

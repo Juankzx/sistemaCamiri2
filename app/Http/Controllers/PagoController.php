@@ -10,6 +10,17 @@ use Illuminate\Support\Facades\DB;
 
 class PagoController extends Controller
 {
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole('vendedor')) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
+
     public function index()
     {
         $pagos = Pago::orderBy('created_at', 'desc')->paginate(15);
@@ -88,6 +99,10 @@ class PagoController extends Controller
 
     public function edit(Pago $pago)
     {
+        if (auth()->user()->hasRole('bodeguero')) {
+            abort(403, 'No tienes permiso para editar este producto.');
+        }
+
         $metodosPago = MetodosPago::all();
         return view('pagos.edit', compact('pago', 'metodosPago'));
     }
@@ -136,6 +151,10 @@ class PagoController extends Controller
 
     public function destroy(Pago $pago)
     {
+        if (auth()->user()->hasRole('bodeguero')) {
+            abort(403, 'No tienes permiso para editar este producto.');
+        }
+
         DB::beginTransaction();
 
         try {

@@ -9,6 +9,17 @@ use Illuminate\Http\Request;
 
 class DetalleOrdenCompraController extends Controller
 {
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole('vendedor')) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
+
     /**
      * Muestra todos los detalles de órdenes de compra.
      */

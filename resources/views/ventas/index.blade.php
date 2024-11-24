@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends($isVendedor ? 'layouts.app' : 'adminlte::page')
 
 @section('template_title')
     Ventas
@@ -15,11 +15,15 @@
                                 {{ __('Ventas') }}
                             </span>
 
-                             <div class="float-right">
-                                <a href="{{ route('ventas.create') }}" class="btn btn-primary btn-sm float-right"  data-placement="left">
-                                  {{ __('+ Agregar') }}
+                            <!-- Botones alineados -->
+                            <div class="float-right">
+                                <a href="{{ route('ventas.create') }}" class="btn btn-primary btn-sm float-right" data-placement="left">
+                                    {{ __('+ Agregar') }}
                                 </a>
-                              </div>
+                                <a href="{{ route('cajas.index') }}" class="btn btn-secondary btn-sm float-right ml-2" data-placement="left">
+                                    <i class="fas fa-cash-register"></i> {{ __('Ir a Cajas') }}
+                                </a>
+                            </div>
                         </div>
                     </div>
                     @if ($message = Session::get('success'))
@@ -80,8 +84,11 @@
                                             <td>
                                                 <!-- Botones de acción para la venta -->
                                                 <a class="btn btn-sm btn-primary" href="{{ route('ventas.show', $venta->id) }}" title="Ver Venta"><i class="fa fa-fw fa-eye"></i></a>
-                                                <a class="btn btn-sm btn-success" href="{{ route('ventas.edit', $venta->id) }}" title="Editar Venta"><i class="fa fa-fw fa-edit"></i></a>
                                                 <a class="btn btn-sm btn-info" href="{{ route('ventas.print', $venta->id) }}" target="_blank" title="Imprimir Boleta"><i class="fa fa-fw fa-print"></i></a>
+                                                
+                                                <!-- Solo permitir edición y eliminación si el usuario no es vendedor -->
+                                                @if (!auth()->user()->hasRole('vendedor'))
+                                                <a class="btn btn-sm btn-success" href="{{ route('ventas.edit', $venta->id) }}" title="Editar Venta"><i class="fa fa-fw fa-edit"></i></a>
 
                                                 <!-- Botón de eliminación con confirmación -->
                                                 <form action="{{ route('ventas.destroy', $venta->id) }}" method="POST" style="display: inline;">
@@ -89,6 +96,8 @@
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Está seguro de eliminar esta venta?');" title="Eliminar Venta"><i class="fa fa-fw fa-trash"></i></button>
                                                 </form>
+                                                @endif
+                                                
                                             </td>
                                         </tr>
                                     @endforeach

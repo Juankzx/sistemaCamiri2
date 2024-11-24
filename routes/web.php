@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\CategoriaController;
@@ -17,13 +18,14 @@ use App\Http\Controllers\GuiaDespachoController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\CajaController;
 use App\Http\Controllers\PagoController;
-use App\Http\Controllers\MetodoPagoController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MetodosPagoController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\CajeroLoginController;
+
 
 // Ruta pública de login
 Route::get('/', function () {
@@ -45,13 +47,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/home', [HomeController::class, 'index'])->name('home');
     Route::resource('productos', ProductoController::class);
     Route::resource('inventarios', InventarioController::class);
-});
+
 
 // Rutas de recursos
 Route::resource('categorias', CategoriaController::class)->middleware('auth');
 Route::resource('proveedores', ProveedoreController::class)->middleware('auth');
 Route::resource('sucursales', SucursaleController::class)->middleware('auth');
-Route::resource('metodos-pagos', MetodoPagoController::class)->middleware('auth');
+Route::resource('metodos-pagos', MetodosPagoController::class)->middleware('auth');
 Route::resource('bodegas', BodegaController::class)->middleware('auth');
 Route::resource('movimientos', MovimientoController::class)->middleware('auth');
 Route::resource('facturas', FacturaController::class)->middleware('auth');
@@ -68,6 +70,7 @@ Route::resource('ventas', VentaController::class)->middleware('auth');
 Route::resource('detalles-venta', DetalleOrdenCompraController::class)->middleware('auth');
 Route::get('/ventas/{id}/print', [VentaController::class, 'print'])->name('ventas.print');
 
+
 // Modulo Producto
 Route::resource('productos', ProductoController::class)->middleware('auth');
 Route::get('/api/check-producto-bodega-general/{productoId}', [OrdenCompraController::class, 'checkProductoEnBodegaGeneral']);
@@ -76,6 +79,11 @@ Route::get('/api/check-producto-bodega-general/{productoId}', [OrdenCompraContro
 Route::post('/inventarios/incrementar/{id}', [InventarioController::class, 'incrementarBodega'])->name('inventarios.incrementar');
 Route::post('/inventarios/decrementar/{id}', [InventarioController::class, 'decrementarBodega'])->name('inventarios.decrementar');
 Route::post('/inventarios/transferir/{id}', [InventarioController::class, 'transferirASucursal'])->name('inventarios.transferir');
+Route::post('/inventarios/transferirmasivo', [InventarioController::class, 'transferirMasivo'])
+    ->name('inventarios.transferirmasivo')
+    ->middleware('auth');
+Route::post('/inventarios/storeMultiple', [InventarioController::class, 'storeMultiple'])->name('inventarios.storeMultiple');
+
 
 // Modulo Solicitud Pedido
 Route::resource('ordenes-compras', OrdenCompraController::class)->middleware('auth');
@@ -103,6 +111,19 @@ Route::prefix('reportes')->middleware('auth')->group(function () {
 });
 
 // Modulo Roles
-//Route::get('asignar-rol', [UserController::class, 'mostrarFormularioAsignarRol'])->name('asignarRolForm');
-//Route::resource('users', UserController::class)->middleware('auth');
-//Route::post('/asignar-rol', [UserController::class, 'asignarRol'])->name('asignar-rol');
+Route::resource('users', UserController::class)->middleware(['auth']);
+Route::get('asignar-rol', [UserController::class, 'mostrarFormularioAsignarRol'])->name('asignar-rol');
+Route::post('asignar-rol', [UserController::class, 'asignarRol'])->name('asignar-rol.store');
+Route::post('remover-rol', [UserController::class, 'removerRol'])->name('asignar-rol.destroy');
+
+Route::post('/cajeros/login', [CajeroLoginController::class, 'login'])->name('cajeros.login');
+
+});
+//Route::post('/login-with-pin', [AuthController::class, 'loginWithPin'])->name('loginWithPin');
+Route::post('/login-with-pin', [\App\Http\Controllers\Auth\LoginController::class, 'loginWithPin'])->name('loginWithPin');
+Route::get('/test-login-with-pin', function () {
+    \Log::info('Ruta /test-login-with-pin fue accedida.');
+    return response()->json(['message' => 'Esta ruta es solo para pruebas.']);
+});
+
+

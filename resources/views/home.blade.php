@@ -1,10 +1,10 @@
 @extends('adminlte::page')
 
-@section('title', 'Inicio')
+@section('title', 'Dashboard')
 
 @section('content_header')
     <h1>Dashboard</h1>
-@stop
+@endsection
 
 @section('content')
 <div class="row mb-4">
@@ -165,7 +165,6 @@
                     <tr>
                         <td>{{ $factura->numero_factura }}</td>
                         <td>{{ $factura->fecha_emision }}</td>
-                        
                         <td>${{ $factura->monto_total }}</td>
                         <td>
                             <span class="badge {{ $factura->estado_pago == 'pagado' ? 'badge-success' : 'badge-warning' }}">
@@ -181,6 +180,7 @@
 
 @endsection
 
+
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -192,14 +192,14 @@
             datasets: [
                 {
                     label: 'Semana Actual',
-                    data: [{{ $ventasSemanaActual->get('Monday', 0) }}, {{ $ventasSemanaActual->get('Tuesday', 0) }}, {{ $ventasSemanaActual->get('Wednesday', 0) }}, {{ $ventasSemanaActual->get('Thursday', 0) }}, {{ $ventasSemanaActual->get('Friday', 0) }}, {{ $ventasSemanaActual->get('Saturday', 0) }}, {{ $ventasSemanaActual->get('Sunday', 0) }}],
+                    data: [{{ implode(', ', $ventasSemanaActualData) }}],
                     borderColor: 'rgba(60,141,188,1)',
                     backgroundColor: 'rgba(60,141,188,0.2)',
                     fill: true
                 },
                 {
                     label: 'Semana Anterior',
-                    data: [{{ $ventasSemanaAnterior->get('Monday', 0) }}, {{ $ventasSemanaAnterior->get('Tuesday', 0) }}, {{ $ventasSemanaAnterior->get('Wednesday', 0) }}, {{ $ventasSemanaAnterior->get('Thursday', 0) }}, {{ $ventasSemanaAnterior->get('Friday', 0) }}, {{ $ventasSemanaAnterior->get('Saturday', 0) }}, {{ $ventasSemanaAnterior->get('Sunday', 0) }}],
+                    data: [{{ implode(', ', $ventasSemanaAnteriorData) }}],
                     borderColor: 'rgba(210, 214, 222, 1)',
                     backgroundColor: 'rgba(210, 214, 222, 0.5)',
                     fill: true
@@ -213,6 +213,20 @@
                 y: { beginAtZero: true }
             }
         }
+    });
+
+    function cambiarPeriodo(periodo) {
+        fetch(`/obtener-datos-ventas/${periodo}`)
+            .then(response => response.json())
+            .then(data => {
+                renderChart(data.labels, data.values);
+            })
+            .catch(error => console.error('Error al obtener datos:', error));
+    }
+
+    // Renderiza el gráfico inicial
+    document.addEventListener('DOMContentLoaded', () => {
+        cambiarPeriodo('semana'); // Cargar ventas de la semana al inicio
     });
 </script>
 @endsection

@@ -11,33 +11,33 @@
         </div>
 
         <!-- Tabla de unidades con estilo Bootstrap -->
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Abreviatura</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="unitTableBody">
-                    @foreach ($unidades as $unidad)
-                        <tr>
-                            <td>{{ $unidad->id }}</td>
-                            <td>{{ $unidad->nombre }}</td>
-                            <td>{{ $unidad->abreviatura }}</td>
-                            <td>
-                                <a href="{{ route('unidades.show', $unidad) }}" class="btn btn-sm btn-primary"><i class="fa fa-fw fa-eye"></i></a>
-                                <a href="{{ route('unidades.edit', $unidad) }}" class="btn btn-sm btn-success"><i class="fa fa-fw fa-edit"></i></a>
-                                <!-- Botón para eliminar con SweetAlert -->
-                                <button class="btn btn-sm btn-danger delete-btn" data-id="{{ $unidad->id }}" data-nombre="{{ $unidad->nombre }}"><i class="fa fa-fw fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>N°</th>
+                <th>Nombre</th>
+                <th>Abreviatura</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="unitTableBody">
+            @foreach ($unidades as $index => $unidad)
+                <tr>
+                    <td>{{ $loop->iteration }}</td>
+                    <td>{{ $unidad->nombre }}</td>
+                    <td>{{ $unidad->abreviatura }}</td>
+                    <td>
+                        <a href="{{ route('unidades.show', $unidad) }}" class="btn btn-sm btn-primary"><i class="fa fa-fw fa-eye"></i></a>
+                        <a href="{{ route('unidades.edit', $unidad) }}" class="btn btn-sm btn-success"><i class="fa fa-fw fa-edit"></i></a>
+                        <!-- Botón para eliminar con SweetAlert -->
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="{{ $unidad->id }}" data-nombre="{{ $unidad->nombre }}"><i class="fa fa-fw fa-trash"></i></button>
+                    </td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
 
         <!-- Información de la paginación y número de registros -->
         <div class="d-flex justify-content-between align-items-center mt-3">

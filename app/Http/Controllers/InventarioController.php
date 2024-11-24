@@ -13,6 +13,17 @@ use Illuminate\Support\Facades\Log;
 
 class InventarioController extends Controller
 {
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole('vendedor')) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
+
     // Muestra el listado del inventario
 // Muestra el listado del inventario
 public function index(Request $request): View
@@ -56,6 +67,7 @@ public function index(Request $request): View
     // Muestra el formulario para crear un nuevo inventario
     public function create()
 {
+    
     $productos = Producto::with('categoria')->get();
     $bodegas = Bodega::all();
     $sucursales = Sucursale::all();
@@ -125,6 +137,10 @@ public function index(Request $request): View
     // Muestra el formulario para editar un inventario existente
     public function edit(Inventario $inventario)
     {
+        if (auth()->user()->hasRole('bodeguero')) {
+            abort(403, 'No tienes permiso para editar este producto.');
+        }
+
         $productos = Producto::all();
         $sucursales = Sucursale::all();
         $bodegas = Bodega::all();
@@ -153,12 +169,16 @@ public function update(Request $request, Inventario $inventario)
 
     // Redirigir con mensaje de éxito
     return redirect()->route('inventarios.index')->with('success', 'Inventario actualizado exitosamente.');
-}
+    }
 
 
     // Elimina un inventario de la base de datos
     public function destroy($id)
     {
+        if (auth()->user()->hasRole('bodeguero')) {
+            abort(403, 'No tienes permiso para editar este producto.');
+        }
+
         $inventario = Inventario::findOrFail($id);
         $inventario->delete();
         return redirect()->route('inventarios.index')->with('success', 'Inventario eliminado exitosamente.');

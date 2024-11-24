@@ -186,6 +186,8 @@ return [
     | Menu Items 
     |-------------------------------------------------------------------------- 
     */
+
+    'menu' => [],  // Define el menú vacío aquí
     'menu' => [
         // Navbar items:
         [
@@ -325,6 +327,12 @@ return [
                     'icon' => 'fa fa-users',
                     'url' => 'users',
                     'active' => ['users', 'users/*'],
+                ],
+                [
+                    'text' => 'Asignar Rol',
+                    'icon' => 'fa fa-user-tag',
+                    'url' => 'asignar-rol',
+                    'active' => ['asignar-rol', 'asignar-rol/*'],
                 ],
             ],
         ],

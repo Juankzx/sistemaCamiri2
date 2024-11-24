@@ -16,14 +16,28 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
 
+
 class ProductoController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+
+     public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole('vendedor')) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
     
      public function index(Request $request)
      {
+        
+
          $productos = Producto::with(['unidadmedida', 'categoria', 'proveedor'])
          ->where('estado', 1) // Filtrar solo productos con estado "activo"
             ->orderBy('created_at', 'desc') // Ordenar por 'created_at' // Ordenar los pagos por la fecha de creación en orden descendente
@@ -155,6 +169,10 @@ class ProductoController extends Controller
      */
     public function edit($id): View
     {
+        if (auth()->user()->hasRole('bodeguero')) {
+            abort(403, 'No tienes permiso para editar este producto.');
+        }
+
         $producto = Producto::findOrFail($id);
         $categorias = Categoria::all();
         $proveedores = Proveedore::all();
@@ -168,6 +186,10 @@ class ProductoController extends Controller
 
     public function destroy($id): RedirectResponse
     {
+        if (auth()->user()->hasRole('bodeguero')) {
+            abort(403, 'No tienes permiso para editar este producto.');
+        }
+
         // Cambiar el estado a "inactivo" en lugar de eliminar el producto
         $producto = Producto::find($id);
         if ($producto) {

@@ -40,15 +40,63 @@
         <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
         <label class="form-check-label" for="remember">Recordarme</label>
     </div>
-    <button type="submit" class="btn btn-primary btn-block">Acceder</button>
-    <div class="login-footer">
-        @if (Route::has('password.request'))
-            <a href="{{ route('password.request') }}">Olvidé mi contraseña</a>
-        @endif
-     
-        @if (Route::has('register'))
-            
-        @endif
+
+    <!-- Botones con el "o" centrado -->
+    <div class="text-center mt-4">
+        <div class="d-flex align-items-center justify-content-center">
+            <button type="submit" class="btn btn-primary">Acceder</button>
+            <span class="mx-3 or-divider">o</span>
+            <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#pinModal">
+                Iniciar Sesión como Cajero
+            </button>
+        </div>
     </div>
 </form>
+
+<div class="login-footer">
+    @if (Route::has('password.request'))
+        <a href="{{ route('password.request') }}">Olvidé mi contraseña</a>
+    @endif
+</div>
+
+<!-- Incluyendo el modal -->
+@include('modals.login-pin-modal')
+
+@endsection
+
+@section('css')
+<style>
+    /* Estilo para el texto "o" */
+    .or-divider {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #888;
+    }
+</style>
+@endsection
+
+@section('js')
+<script>
+    function addDigit(digit) {
+        const pinInput = document.getElementById('pin');
+        if (pinInput.value.length < 6) { // Máximo 6 dígitos
+            pinInput.value += digit;
+        }
+    }
+
+    function clearPin() {
+        document.getElementById('pin').value = '';
+    }
+
+    // SweetAlert para mensajes de error al iniciar sesión como cajero
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: '{{ session('error') }}',
+            timer: 3000,
+            showConfirmButton: false
+        });
+    @endif
+</script>
 @endsection

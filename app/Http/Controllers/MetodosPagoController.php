@@ -11,6 +11,17 @@ use Illuminate\View\View;
 
 class MetodosPagoController extends Controller
 {
+
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole(['bodeguero', 'vendedor'])) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
     /**
      * Display a listing of the resource.
      */

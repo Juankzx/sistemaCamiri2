@@ -10,6 +10,17 @@ use Illuminate\Support\Facades\DB;
 
 class DetalleGuiaDespachoController extends Controller
 {
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole('vendedor')) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
+
     public function index($guiaDespachoId)
     {
         $guiaDespacho = GuiaDespacho::with('detalles.producto')->findOrFail($guiaDespachoId);

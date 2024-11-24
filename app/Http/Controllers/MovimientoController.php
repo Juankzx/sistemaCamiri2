@@ -7,6 +7,17 @@ use Illuminate\Http\Request;
 
 class MovimientoController extends Controller
 {
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole('vendedor')) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
+
     public function index()
     {
         $movimientos = Movimiento::with(['producto', 'sucursal', 'bodega', 'user'])

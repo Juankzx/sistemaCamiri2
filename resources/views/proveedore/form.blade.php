@@ -13,6 +13,12 @@
         </div>
 
         <div class="form-group mb-2 mb20">
+            <label for="razon_social" class="form-label">{{ __('Razón Social') }}</label>
+            <input type="text" name="razon_social" class="form-control @error('razon_social') is-invalid @enderror" value="{{ old('razon_social', $proveedore?->razon_social) }}" id="razon_social" placeholder="Razón Social">
+            {!! $errors->first('razon_social', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
+        </div>
+
+        <div class="form-group mb-2 mb20">
             <label for="direccion" class="form-label">{{ __('Dirección') }}</label>
             <input type="text" name="direccion" class="form-control @error('direccion') is-invalid @enderror" value="{{ old('direccion', $proveedore?->direccion) }}" id="direccion" placeholder="Dirección">
             {!! $errors->first('direccion', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
@@ -32,6 +38,8 @@
             {!! $errors->first('email', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
         </div>
     </div>
+    
+    
 
     <div class="col-md-12 mt20 mt-2">
         <button type="submit" class="btn btn-primary">{{ __('Guardar') }}</button>

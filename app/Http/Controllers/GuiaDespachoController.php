@@ -14,6 +14,17 @@ use Illuminate\Support\Facades\DB;
 
 class GuiaDespachoController extends Controller
 {
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole('vendedor')) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
+
     public function index()
     {
         $guias = GuiaDespacho::with('ordenCompra.proveedor')
@@ -146,6 +157,10 @@ public function getDetalles($id)
 
     public function destroy($id)
     {
+        if (auth()->user()->hasRole('bodeguero')) {
+            abort(403, 'No tienes permiso para editar este producto.');
+        }
+
         $guiaDespacho = GuiaDespacho::findOrFail($id);
 
         try {

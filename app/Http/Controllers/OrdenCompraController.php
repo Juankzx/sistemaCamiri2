@@ -16,6 +16,17 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrdenCompraController extends Controller
 {
+    public function __construct()
+{
+    $this->middleware(function ($request, $next) {
+        if (auth()->check() && auth()->user()->hasRole('vendedor')) {
+            abort(403, 'No tienes permiso para acceder a esta página.');
+        }
+        return $next($request);
+    });
+}
+
+
     public function index()
     {
         $ordenes = OrdenCompra::with('proveedor', 'detalles.producto')
@@ -64,6 +75,10 @@ class OrdenCompraController extends Controller
 
     public function destroy($id)
 {
+    if (auth()->user()->hasRole('bodeguero')) {
+        abort(403, 'No tienes permiso para editar este producto.');
+    }
+
     try {
         // Buscar la orden de compra
         $ordenCompra = OrdenCompra::findOrFail($id);

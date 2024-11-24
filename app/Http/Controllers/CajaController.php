@@ -12,6 +12,17 @@ use Illuminate\Support\Facades\DB;
 
 class CajaController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (auth()->check() && auth()->user()->hasRole('bodeguero')) {
+                abort(403, 'No tienes permiso para acceder a esta página.');
+            }
+            return $next($request);
+        });
+    }
+    
+
     public function index()
     {
         $cajas = Caja::with('sucursal', 'user')
@@ -138,6 +149,20 @@ class CajaController extends Controller
         'totalAmipass', 'ventasAmipass', 'totalVentas', 'totalGastos',
         'balanceFinal', 'totalVentasRealizadas'
     ));
+}
+
+public function edit($id)
+{
+    if (auth()->user()->hasRole('vendedor')) {
+        abort(403, 'No tienes permiso para editar esta caja.');
+    }
+}
+
+public function destroy($id)
+{
+    if (auth()->user()->hasRole('vendedor')) {
+        abort(403, 'No tienes permiso para editar esta caja.');
+    }
 }
 
 

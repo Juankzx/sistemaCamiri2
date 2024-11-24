@@ -1,0 +1,9 @@
+.layout-vendedor .main-sidebar,
+.layout-vendedor .main-header .navbar,
+.layout-vendedor .main-header .sidebar-toggle {
+    display: none !important; /* Oculta la barra lateral y el botón */
+}
+
+.layout-vendedor .content-wrapper {
+    margin-left: 0 !important; /* Ajusta el contenido para ocupar todo el ancho */
+}
