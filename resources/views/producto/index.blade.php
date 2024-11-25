@@ -39,13 +39,13 @@
                                 <thead class="thead">
                                     <tr>
                                         <th>N°</th>   
-                                        <th>Codigo de Barras</th>
                                         <th>Nombre</th>
+                                        <th>Codigo de Barras</th>
                                         <th>Unidad de Medida</th>
                                         <th>Precio Compra</th>
                                         <th>Precio Venta</th>
                                         <th>Categoria</th>
-                                        <th>Proveedor</th>
+                                        <th>Proveedor</th>  
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -54,8 +54,8 @@
                                     @foreach ($productos as $producto)
                                         <tr>
                                             <td>{{ ++$i }}</td>
-                                            <td>{{ $producto->codigo_barra }}</td>
                                             <td>{{ $producto->nombre }}</td>
+                                            <td>{{ $producto->codigo_barra }}</td>
                                             <td>{{ $producto->unidadmedida->nombre }} - {{ $producto->unidadmedida->abreviatura }}</td>
                                             <td>{{ isset($producto->preciocompra) ? '$' . number_format($producto->preciocompra, 0) : 'N/A' }}</td>
                                             <td>{{ isset($producto->precioventa) ? '$' . number_format($producto->precioventa, 0) : 'N/A' }}</td>
@@ -129,8 +129,8 @@
                     const row = `
                         <tr>
                             <td>${index + 1}</td>
-                            <td>${producto.codigo_barra}</td>
                             <td>${producto.nombre}</td>
+                            <td>${producto.codigo_barra}</td>
                             <td>${producto.unidadmedida ? producto.unidadmedida.nombre + ' - ' + producto.unidadmedida.abreviatura : ''}</td>
                             <td>${producto.preciocompra ? '$' + Number(producto.preciocompra).toLocaleString() : 'N/A'}</td>
                             <td>${producto.precioventa ? '$' + Number(producto.precioventa).toLocaleString() : 'N/A'}</td>

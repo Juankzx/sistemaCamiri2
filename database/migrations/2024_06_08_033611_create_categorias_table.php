@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('nombre');
             $table->string('descripcion')->nullable();
-            $table->boolean('estado')->default(true);;
+            $table->boolean('estado')->default(true);
+            $table->boolean('sin_stock')->default(false);
             $table->timestamps();
         });
     }

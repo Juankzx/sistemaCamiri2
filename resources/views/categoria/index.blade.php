@@ -35,6 +35,7 @@
                                     <th>N°</th>
                                     <th>Nombre</th>
                                     <th>Descripción</th>
+                                    <th>Sin Stock</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -45,6 +46,11 @@
                                         <td>{{ ++$i }}</td>
                                         <td>{{ $categoria->nombre }}</td>
                                         <td>{{ $categoria->descripcion ?? 'N/A' }}</td> <!-- Se agregó el operador ?? -->
+                                        <td>
+                                            <span class="badge {{ $categoria->sin_stock ? 'bg-success' : 'bg-secondary' }}">
+                                                {{ $categoria->sin_stock ? __('Sí') : __('No') }}
+                                            </span>
+                                        </td>
                                         <td>{{ $categoria->estado ? 'Activo' : 'Inactivo' }}</td>
                                         <td>
                                             <a class="btn btn-sm btn-primary" href="{{ route('categorias.show', $categoria->id) }}"><i class="fa fa-fw fa-eye"></i></a>
@@ -117,32 +123,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Función para mostrar las categorías filtradas o completas
     function displayCategories(filteredCategories) {
-        const tableBody = document.querySelector('#categoryTableBody');
-        tableBody.innerHTML = '';
+    const tableBody = document.querySelector('#categoryTableBody');
+    tableBody.innerHTML = '';
 
-        if (filteredCategories.length > 0) {
-            filteredCategories.forEach((categoria, index) => {
-                const row = `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${categoria.nombre}</td>
-                        <td>{{ $categoria->descripcion ?? 'N/A' }}</td> <!-- Se agregó el operador ?? -->
-                        <td>${categoria.estado ? 'Activo' : 'Inactivo'}</td>
-                        <td>
-                            <a class="btn btn-sm btn-primary" href="/categorias/${categoria.id}"><i class="fa fa-fw fa-eye"></i></a>
-                            <a class="btn btn-sm btn-success" href="/categorias/${categoria.id}/edit"><i class="fa fa-fw fa-edit"></i></a>
-                            <button class="btn btn-sm btn-danger delete-btn" data-id="${categoria.id}" data-nombre="${categoria.nombre}"><i class="fa fa-fw fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row;
-            });
-        } else {
-            tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No se encontraron categorías.</td></tr>';
-        }
-
-        bindDeleteButtons(); // Vuelve a asignar el evento a los botones
+    if (filteredCategories.length > 0) {
+        filteredCategories.forEach((categoria, index) => {
+            const row = `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${categoria.nombre}</td>
+                    <td>${categoria.descripcion || 'N/A'}</td> <!-- Muestra la descripción directamente del objeto -->
+                    <td>
+                        <span class="badge ${categoria.sin_stock ? 'bg-success' : 'bg-secondary'}">
+                            ${categoria.sin_stock ? 'Sí' : 'No'}
+                        </span>
+                    </td>
+                    <td>${categoria.estado ? 'Activo' : 'Inactivo'}</td>
+                    <td>
+                        <a class="btn btn-sm btn-primary" href="/categorias/${categoria.id}"><i class="fa fa-fw fa-eye"></i></a>
+                        <a class="btn btn-sm btn-success" href="/categorias/${categoria.id}/edit"><i class="fa fa-fw fa-edit"></i></a>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="${categoria.id}" data-nombre="${categoria.nombre}"><i class="fa fa-fw fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+    } else {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron categorías.</td></tr>';
     }
+
+    bindDeleteButtons(); // Vuelve a asignar el evento a los botones
+}
 
     // Función para manejar la eliminación con SweetAlert
     function bindDeleteButtons() {

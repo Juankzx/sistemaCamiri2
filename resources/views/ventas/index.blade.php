@@ -20,9 +20,11 @@
                                 <a href="{{ route('ventas.create') }}" class="btn btn-primary btn-sm float-right" data-placement="left">
                                     {{ __('+ Agregar') }}
                                 </a>
-                                <a href="{{ route('cajas.index') }}" class="btn btn-secondary btn-sm float-right ml-2" data-placement="left">
-                                    <i class="fas fa-cash-register"></i> {{ __('Ir a Cajas') }}
-                                </a>
+                                @if (auth()->user()->hasRole('vendedor'))
+                                    <a href="{{ route('cajas.index') }}" class="btn btn-secondary btn-sm float-right ml-2" data-placement="left">
+                                        <i class="fas fa-cash-register"></i> {{ __('Ir a Cajas') }}
+                                    </a>
+                                @endif
                             </div>
                         </div>
                     </div>

@@ -28,7 +28,7 @@ class Categoria extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['nombre', 'descripcion'];
+    protected $fillable = ['nombre', 'descripcion', 'sin_stock'];
 
 
     /**
@@ -39,4 +39,8 @@ class Categoria extends Model
         return $this->hasMany(\App\Models\Producto::class, 'id', 'categoria_id');
     }
     
+    public function esSinStock()
+    {
+        return $this->sin_stock;
+    }
 }

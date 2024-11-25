@@ -52,6 +52,11 @@ class Producto extends Model
     {
         return $this->belongsTo(\App\Models\Categoria::class, 'categoria_id', 'id');
     }
+    // Método helper para verificar si el producto es "sin stock"
+    public function esSinStock()
+    {
+        return $this->categoria && $this->categoria->sin_stock;
+    }
     
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

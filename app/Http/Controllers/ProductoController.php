@@ -88,6 +88,17 @@ class ProductoController extends Controller
             'nombre.unique' => 'El nombre del producto ya existe. Por favor, elija un nombre diferente.',
             'codigo_barra.unique' => 'El código de barras ya está registrado para otro producto.',
         ]);
+
+         // Verificar si la categoría está marcada como "sin stock"
+    $categoria = Categoria::find($request->categoria_id);
+
+    if ($categoria && $categoria->sin_stock) {
+        // Ajustar lógica para categorías "sin stock"
+        $request->merge([
+            'preciocompra' => null, // Ignorar precio de compra
+            'proveedor_id' => null, // Ignorar proveedor
+        ]);
+    }
     
         $data = $request->all();
     

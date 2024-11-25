@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('venta_id');
             $table->unsignedBigInteger('producto_id');
-            $table->unsignedBigInteger('inventario_id');
+            $table->unsignedBigInteger('inventario_id')->nullable();
             $table->integer('cantidad');
             $table->integer('precio_unitario');
             $table->timestamps();

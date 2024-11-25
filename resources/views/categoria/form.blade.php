@@ -10,6 +10,19 @@
             <input type="text" name="descripcion" class="form-control @error('descripcion') is-invalid @enderror" value="{{ old('descripcion', $categoria?->descripcion) }}" id="descripcion" placeholder="Descripcion">
             {!! $errors->first('descripcion', '<div class="invalid-feedback" role="alert"><strong>:message</strong></div>') !!}
         </div>
+
+        <!-- Campo Sin Stock -->
+        <div class="form-check mb-3">
+                                <input type="checkbox" name="sin_stock" id="sin_stock" value="1"
+                                    class="form-check-input @error('sin_stock') is-invalid @enderror"
+                                    {{ old('sin_stock') ? 'checked' : '' }}>
+                                <label for="sin_stock" class="form-check-label">
+                                    {{ __('Categoría Sin Stock') }}
+                                </label>
+                                @error('sin_stock')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
     </div>
 
     <!-- Botones de Guardar y Volver -->

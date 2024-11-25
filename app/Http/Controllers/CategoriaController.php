@@ -53,6 +53,7 @@ public function index(Request $request): View
         $request->validate([
             'nombre' => 'required|string|max:255|unique:categorias,nombre',
             'descripcion' => 'nullable|string|max:255',
+            'sin_stock' => 'nullable|boolean', // Validación para sin_stock
         ], [
             'nombre.unique' => 'El nombre de la categoría ya existe. Por favor, elija un nombre diferente.',
         ]);
@@ -94,6 +95,7 @@ public function index(Request $request): View
             'nombre' => 'required|string|max:255|unique:categorias,nombre,' . $categoria->id,
             'descripcion' => 'nullable|string|max:255',
             'estado' => 'required|boolean',
+            'sin_stock' => 'required|boolean',
         ], [
             'nombre.unique' => 'El nombre de la categoría ya existe. Por favor, elija un nombre diferente.',
         ]);

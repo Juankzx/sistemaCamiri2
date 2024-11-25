@@ -75,12 +75,17 @@ public function create()
     // Obtener la sucursal activa como objeto completo
     $sucursalActiva = Sucursale::find($cajaAbierta->sucursal_id);
 
-    // Obtener todos los productos con inventarios de la sucursal activa
-    $productos = Producto::with(['inventarios' => function ($query) use ($sucursalActiva) {
+    // Obtener todos los productos con inventarios de la sucursal activa o categorías "sin stock"
+    $productos = Producto::with(['categoria', 'inventarios' => function ($query) use ($sucursalActiva) {
         $query->where('sucursal_id', $sucursalActiva->id);
     }])
-    ->whereHas('inventarios', function ($query) use ($sucursalActiva) {
-        $query->where('sucursal_id', $sucursalActiva->id);
+    ->where(function ($query) use ($sucursalActiva) {
+        $query->whereHas('inventarios', function ($subQuery) use ($sucursalActiva) {
+            $subQuery->where('sucursal_id', $sucursalActiva->id);
+        })
+        ->orWhereHas('categoria', function ($subQuery) {
+            $subQuery->where('sin_stock', true);
+        });
     })
     ->get();
 
@@ -97,101 +102,154 @@ public function store(Request $request)
         'metodo_pago_id' => 'required|exists:metodos_pagos,id',
         'fecha' => 'required|date',
         'detalles' => 'required|array',
-        'detalles.*.inventario_id' => 'required|exists:inventarios,id',
         'detalles.*.producto_id' => 'required|exists:productos,id',
-        'detalles.*.cantidad' => 'required|integer|min:1',
+        'detalles.*.cantidad' => 'required|numeric|min:0.01',
         'detalles.*.precio_unitario' => 'required|numeric',
+        // Validar inventario_id solo si el producto no pertenece a una categoría "sin_stock"
+        'detalles.*.inventario_id' => [
+            'nullable',
+            function ($attribute, $value, $fail) use ($request) {
+                $detalleIndex = explode('.', $attribute)[1]; // Obtener el índice del detalle
+                $productoId = $request->input("detalles.$detalleIndex.producto_id");
+    
+                $producto = Producto::with('categoria')->find($productoId);
+    
+                if ($producto && !$producto->categoria->sin_stock && !$value) {
+                    $fail("El campo $attribute es obligatorio para productos con inventario.");
+                }
+            },
+        ],
     ]);
+    
+
+    // Log para verificar los datos validados
+    \Log::info("Datos validados: ", $validatedData);
 
     // Verificar si el usuario tiene una caja abierta
     $cajaAbierta = Caja::where('user_id', auth()->user()->id)
-                        ->where('estado', true)
-                        ->first();
+        ->where('estado', true)
+        ->first();
 
     if (!$cajaAbierta) {
-        return response()->json(['success' => false, 'error' => 'No tiene una caja abierta. Por favor, abra una caja antes de realizar una venta.'], 500);
+        \Log::error("No hay caja abierta para el usuario.");
+        return response()->json([
+            'success' => false,
+            'error' => 'No tiene una caja abierta. Por favor, abra una caja antes de realizar una venta.'
+        ], 500);
     }
+
+    // Log para verificar la caja abierta
+    \Log::info("Caja abierta encontrada: ", $cajaAbierta->toArray());
 
     // Iniciar una transacción
     DB::beginTransaction();
 
     try {
-        // Crear la venta con el total inicial en cero y agregar `caja_id`
+        // Crear la venta
         $venta = new Venta([
             'user_id' => $validatedData['user_id'],
             'sucursal_id' => $validatedData['sucursal_id'],
             'metodo_pago_id' => $validatedData['metodo_pago_id'],
-            'caja_id' => $cajaAbierta->id, // Asignar caja_id al crear la venta
+            'caja_id' => $cajaAbierta->id,
             'fecha' => $validatedData['fecha'],
-            'total' => 0,  // Total temporalmente en cero
-            'caja_id' => $cajaAbierta->id,  // Asignar el ID de la caja abierta
+            'total' => 0,
         ]);
         $venta->save();
+
+        // Log para verificar la venta creada
+        \Log::info("Venta creada: ", $venta->toArray());
 
         $total = 0; // Inicializar el total de la venta
 
         // Procesar cada detalle de la venta
-        foreach ($validatedData['detalles'] as $detalleData) {
-            $producto = Producto::findOrFail($detalleData['producto_id']);
-            \Log::info("Producto encontrado: {$producto->nombre} con ID: {$producto->id}");
+        foreach ($validatedData['detalles'] as $detalleIndex => $detalleData) {
+            \Log::info("Procesando detalle $detalleIndex: ", $detalleData);
 
-            // Verificar inventario disponible para la sucursal
-            $inventario = Inventario::where('producto_id', $producto->id)
-                                    ->where('sucursal_id', $validatedData['sucursal_id'])
-                                    ->first();
+            $producto = Producto::with('categoria')->findOrFail($detalleData['producto_id']);
 
-            if (!$inventario) {
-                throw new \Exception("Inventario no encontrado para el producto: {$producto->nombre} en la sucursal con ID: {$validatedData['sucursal_id']}");
+            \Log::info("Producto encontrado: {$producto->nombre} (ID: {$producto->id})");
+
+            // Verificar si el producto pertenece a una categoría "sin stock"
+            if ($producto->categoria && $producto->categoria->sin_stock) {
+                \Log::info("Producto 'sin stock': {$producto->nombre}");
+
+                // Crear el detalle de la venta sin inventario
+                $detalle = $venta->detallesVenta()->create([
+                    'producto_id' => $producto->id,
+                    'inventario_id' => null,
+                    'cantidad' => $detalleData['cantidad'],
+                    'precio_unitario' => $detalleData['precio_unitario'],
+                ]);
+
+                \Log::info("Detalle creado para producto 'sin stock': ", $detalle->toArray());
+            } else {
+                // Verificar inventario disponible
+                $inventario = Inventario::where('producto_id', $producto->id)
+                    ->where('sucursal_id', $validatedData['sucursal_id'])
+                    ->first();
+
+                if (!$inventario) {
+                    \Log::error("Inventario no encontrado para producto: {$producto->nombre}");
+                    throw new \Exception("Inventario no encontrado para el producto: {$producto->nombre} en la sucursal.");
+                }
+
+                if ($inventario->cantidad < $detalleData['cantidad']) {
+                    \Log::error("Inventario insuficiente para producto: {$producto->nombre}");
+                    throw new \Exception("No hay suficiente inventario para el producto: {$producto->nombre}. Disponible: {$inventario->cantidad}, Requerido: {$detalleData['cantidad']}");
+                }
+
+                // Decrementar la cantidad del inventario
+                $inventario->decrement('cantidad', $detalleData['cantidad']);
+                \Log::info("Cantidad de inventario actualizada para producto: {$producto->nombre}");
+
+                // Crear el detalle de la venta
+                $detalle = $venta->detallesVenta()->create([
+                    'producto_id' => $producto->id,
+                    'inventario_id' => $detalleData['inventario_id'],
+                    'cantidad' => $detalleData['cantidad'],
+                    'precio_unitario' => $detalleData['precio_unitario'],
+                ]);
+
+                \Log::info("Detalle creado: ", $detalle->toArray());
+
+                // Crear un registro de movimiento de inventario
+                Movimiento::create([
+                    'producto_id' => $producto->id,
+                    'sucursal_id' => $validatedData['sucursal_id'],
+                    'tipo' => 'venta',
+                    'cantidad' => $detalleData['cantidad'],
+                    'fecha' => now(),
+                    'user_id' => $validatedData['user_id'],
+                ]);
+
+                \Log::info("Movimiento de inventario creado para producto: {$producto->nombre}");
             }
-
-            if ($inventario->cantidad < $detalleData['cantidad']) {
-                throw new \Exception("No hay suficiente inventario para el producto: {$producto->nombre}. Disponible: {$inventario->cantidad}, Requerido: {$detalleData['cantidad']}");
-            }
-
-            // Decrementar la cantidad del inventario
-            $inventario->decrement('cantidad', $detalleData['cantidad']);
-
-            // Crear el detalle de la venta
-            $detalle = $venta->detallesVenta()->create([
-                'producto_id' => $producto->id,
-                'inventario_id' => $detalleData['inventario_id'],
-                'cantidad' => $detalleData['cantidad'],
-                'precio_unitario' => $detalleData['precio_unitario']
-            ]);
-            \Log::info("Detalle creado: ID Detalle = {$detalle->id}");
 
             // Calcular el total de la venta
-            $total += $detalle->cantidad * $detalle->precio_unitario;
-
-            // Crear un registro de movimiento de inventario
-            Movimiento::create([
-                'producto_id' => $producto->id,
-                'sucursal_id' => $validatedData['sucursal_id'],
-                'tipo' => 'venta',
-                'cantidad' => $detalleData['cantidad'],
-                'fecha' => now(),
-                'user_id' => $validatedData['user_id']
-            ]);
+            $total += $detalleData['cantidad'] * $detalleData['precio_unitario'];
         }
 
         // Actualizar el total de la venta y guardar
         $venta->total = $total;
         $venta->save();
 
+        \Log::info("Venta actualizada con el total: ", $venta->toArray());
+
         DB::commit();
 
-        // Retornar la respuesta en JSON para el modal de confirmación
         return response()->json(['success' => true, 'venta_id' => $venta->id], 200);
-
     } catch (\Exception $e) {
-        // Rollback de la transacción en caso de error
         DB::rollback();
-        \Log::error("Error al procesar la venta: " . $e->getMessage());
 
-        // Asegúrate de que el catch devuelva siempre un JSON
+        // Log del error detallado para depuración
+        \Log::error("Error al procesar la venta: " . $e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+        ]);
+
         return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
     }
 }
+
 
     public function show(Venta $venta)
     {

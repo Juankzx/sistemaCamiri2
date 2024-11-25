@@ -67,11 +67,12 @@ public function index(Request $request): View
     // Muestra el formulario para crear un nuevo inventario
     public function create()
 {
+    $productos = Producto::with('categoria')->whereHas('categoria', function ($query) {
+        $query->where('sin_stock', false); // Excluir categorías sin stock
+    })->get();
     
-    $productos = Producto::with('categoria')->get();
     $bodegas = Bodega::all();
     $sucursales = Sucursale::all();
-
     // Obtener los productos que ya están en el inventario
     $productosInventariados = Inventario::pluck('producto_id')->toArray();
 

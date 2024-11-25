@@ -23,6 +23,14 @@ class Inventario extends Model
         'stock_critico',
     ];
 
+    // Consultar solo productos con stock
+    public static function conStock()
+    {
+        return self::whereHas('producto.categoria', function ($query) {
+            $query->where('sin_stock', false);
+        });
+    }
+
      // Verifica si el inventario está en nivel crítico
      public function esCritico()
      {
