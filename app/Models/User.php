@@ -43,7 +43,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'pin' => 'integer', // Aseguramos que el 'pin' se maneje como un entero
+        'pin' => 'string', // Aseguramos que el 'pin' se maneje como un entero
     ];
     }
 

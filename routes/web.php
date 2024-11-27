@@ -64,6 +64,7 @@ Route::resource('cajas', CajaController::class)->middleware('auth');
 Route::get('cajas', [CajaController::class, 'index'])->name('cajas.index');
 Route::post('cajas/abrir', [CajaController::class, 'abrir'])->name('cajas.abrir');
 Route::post('cajas/cerrar/{id}', [CajaController::class, 'cerrar'])->name('cajas.cerrar');
+Route::get('/cajas/{id}/imprimir-boleta', [CajaController::class, 'imprimirBoleta'])->name('cajas.imprimir_boleta');
 
 // Modulo Ventas
 Route::resource('ventas', VentaController::class)->middleware('auth');
@@ -93,13 +94,18 @@ Route::get('/api/ordenes-compra/{id}', [GuiaDespachoController::class, 'getOrden
 Route::resource('detalles-ordenes-compras', DetalleOrdenCompraController::class)->middleware('auth');
 Route::post('ordenes-compras/store-completa', [OrdenCompraController::class, 'storeCompleta'])->name('ordenes-compras.store-completa');
 
+
 // Modulo Guia Despacho
 Route::resource('guias-despacho', GuiaDespachoController::class)->middleware('auth');
 Route::get('/api/guias-despacho/{id}/detalles', [GuiaDespachoController::class, 'getDetalles']);
+Route::get('guias-despacho/{id}', [GuiaDespachoController::class, 'show'])->name('guias-despacho.show');
+
+
+//Modulo Facturas
+Route::get('/api/facturas/{id}/detalles', [FacturaController::class, 'getDetalles']);
 
 // Modulo Pagos
 Route::resource('pagos', PagoController::class)->middleware('auth');
-Route::get('pagos/create', [PagoController::class, 'create'])->name('pagos.create');
 Route::get('/api/pagos/{id}/detalles', [PagoController::class, 'getFacturaDetalles']);
 
 // Modulo Reportes
@@ -124,6 +130,13 @@ Route::post('/login-with-pin', [\App\Http\Controllers\Auth\LoginController::clas
 Route::get('/test-login-with-pin', function () {
     \Log::info('Ruta /test-login-with-pin fue accedida.');
     return response()->json(['message' => 'Esta ruta es solo para pruebas.']);
+
+    
+
+
 });
+Route::get('/obtener-datos-ventas/{periodo}', [HomeController::class, 'obtenerDatosVentas'])
+     ->name('obtener-datos-ventas')
+     ->middleware('auth');
 
 

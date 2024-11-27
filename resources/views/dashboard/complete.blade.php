@@ -4,13 +4,6 @@
 
 @section('content_header')
     <h1>Dashboard</h1>
-    @if($user->hasRole('root'))
-        <p>Hola Root: Tienes acceso total al sistema sin ninguna restricción.</p>
-    @elseif($user->hasRole('administrador'))
-        <p>Hola Administrador: Tienes acceso a todas las funcionalidades de tu negocio.</p>
-    @else
-        <p>Bienvenido al sistema.</p>
-    @endif
 @stop
 @section('content')
 <div class="row mb-4">
@@ -95,14 +88,14 @@
             <thead>
                 <tr>
                     <th>Producto</th>
-                    <th>Total Vendido</th>
+                    <th>Cantidad</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($productosMasVendidos as $producto)
                     <tr>
                         <td>{{ $producto->nombre }}</td>
-                        <td><span class="badge badge-success">{{ $producto->total_vendido }}</span></td>
+                        <td><span class="badge badge-success">{{ round($producto->total_vendido) }}</span></td>
                     </tr>
                 @endforeach
             </tbody>
@@ -114,14 +107,15 @@
             <thead>
                 <tr>
                     <th>Producto</th>
-                    <th>Total Vendido</th>
+                    <th>Cantidad</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($productosMenosVendidos as $producto)
                     <tr>
                         <td>{{ $producto->nombre }}</td>
-                        <td><span class="badge badge-danger">{{ $producto->total_vendido }}</span></td>
+                        <td><span class="badge badge-danger">{{ round($producto->total_vendido) }}</span></td>
+
                     </tr>
                 @endforeach
             </tbody>
@@ -131,32 +125,7 @@
 
 <div class="row">
     <div class="col-md-6">
-        <h4>Últimas Órdenes de Compra</h4>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Proveedor</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($ultimasOrdenesCompra as $orden)
-                    <tr>
-                        <td>{{ $orden->id }}</td>
-                        <td>{{ $orden->proveedor->nombre }}</td>
-                        <td>
-                            <span class="badge {{ $orden->estado == 'entregado' ? 'badge-success' : 'badge-warning' }}">
-                                {{ $orden->estado }}
-                            </span>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-    <div class="col-md-6">
-        <h4>Últimas Facturas</h4>
+        <h4>Últimas Facturas Pagadas</h4>
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -167,13 +136,40 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($ultimasfacturas as $factura)
-                    <tr>
+                @foreach($ultimasfacturaspagadas as $factura)
+                <tr>
                         <td>{{ $factura->numero_factura }}</td>
-                        <td>{{ $factura->fecha_emision }}</td>
+                        <td>{{ \Carbon\Carbon::parse($factura->fecha_emision)->format('d-m-Y') }}</td>                        
                         <td>${{ $factura->monto_total }}</td>
                         <td>
-                            <span class="badge {{ $factura->estado_pago == 'pagado' ? 'badge-success' : 'badge-warning' }}">
+                            <span class="badge {{ $factura->estado_pago == 'pagado' ? 'badge-success' : 'badge-danger' }}">
+                                {{ $factura->estado_pago }}
+                            </span>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-6">
+        <h4>Últimas Facturas Pendientes</h4>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Número Factura</th>
+                    <th>Fecha</th>
+                    <th>Monto Total</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($ultimasfacturaspendientes as $factura)
+                    <tr>
+                        <td>{{ $factura->numero_factura }}</td>
+                        <td>{{ \Carbon\Carbon::parse($factura->fecha_emision)->format('d-m-Y') }}</td>
+                        <td>${{ $factura->monto_total }}</td>
+                        <td>
+                            <span class="badge {{ $factura->estado_pago == 'pagado' ? 'badge-success' : 'badge-danger' }}">
                                 {{ $factura->estado_pago }}
                             </span>
                         </td>

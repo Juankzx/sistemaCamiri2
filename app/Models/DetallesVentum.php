@@ -41,6 +41,9 @@ class DetallesVentum extends Model
         'cantidad', 
         'precio_unitario'];
 
+    protected $casts = [
+        'cantidad' => 'float',
+    ];
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

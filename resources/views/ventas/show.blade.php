@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends($isVendedor ? 'layouts.app' : 'adminlte::page')
 
 @section('title', 'Detalle Venta')
 
@@ -9,10 +9,15 @@
 @section('content')
 <div class="container d-flex justify-content-center">
     <!-- Contenedor de información de la venta -->
+    
     <div class="col-md-8">
-        <div class="card">
-            <h4 class="card-title text-center my-4">Detalles de la Venta</h4> <!-- Ajuste del margen superior del título -->
+    <a href="{{ route('ventas.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Volver
+    </a>
+    <div class="card">
+            <h4 class="card-title text-center my-4">Detalle Venta: N° {{ $venta->id }}</h4> <!-- Ajuste del margen superior del título -->
             <div class="card-body">
+                
                 <div class="row mb-3 justify-content-left">
                     <div class="col-md-8">
                         <!-- Información del vendedor y detalles de la venta con mejor alineación -->

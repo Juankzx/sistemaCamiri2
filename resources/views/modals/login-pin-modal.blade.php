@@ -119,7 +119,7 @@ function submitPin() {
                         title: '¡Éxito!',
                         text: 'Autenticado correctamente.',
                         showConfirmButton: false,
-                        timer: 1500, // Mostrar mensaje por 1.5 segundos
+                        timer: 500, // Mostrar mensaje por 1.5 segundos
                     }).then(() => {
                         window.location.href = data.redirect || '/';
                     });
@@ -142,11 +142,7 @@ function submitPin() {
                 clearPin(); // Limpiar el PIN si ocurre un error
             });
     } else {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Advertencia',
-            text: 'Debe ingresar un PIN de 6 dígitos.',
-        });
+
     }
 }
 

@@ -36,17 +36,31 @@ class VentaController extends Controller
     
     public function index()
 {
-    // Obtén las ventas con sus relaciones, ordenadas por la fecha más reciente
-$ventas = Venta::with(['user', 'sucursal', 'metodo_pago', 'detallesVenta.producto', 'inventarios'])
-                ->orderBy('created_at', 'desc') // Ordenar por la fecha de creación en orden descendente
-                ->paginate(15)
-                ->withQueryString();
+    $user = auth()->user(); // Usuario autenticado
 
-    // Obtén las sucursales para pasarlas a la vista
+    // Inicializa la consulta base
+    $ventasQuery = Venta::with([
+        'user', 
+        'sucursal', 
+        'metodo_pago', 
+        'detallesVenta.producto', 
+        'inventarios'
+    ])
+    ->orderBy('created_at', 'desc'); // Ordenar por fecha de creación en orden descendente
+
+    // Si el usuario es vendedor, filtrar solo sus propias ventas
+    if ($user->hasRole('vendedor')) {
+        $ventasQuery->where('user_id', $user->id);
+    }
+
+    // Paginar las ventas
+    $ventas = $ventasQuery->paginate(15)->withQueryString();
+
+    // Obtener sucursales y métodos de pago
     $sucursales = Sucursale::all();
-    $metodosPago = MetodosPago::all(); // Asegúrate de que el modelo Sucursale esté correctamente importado
+    $metodosPago = MetodosPago::all();
 
-    // Pasar ventas y sucursales a la vista
+    // Pasar datos a la vista
     return view('ventas.index', compact('ventas', 'sucursales', 'metodosPago'));
 }
 
@@ -76,7 +90,7 @@ public function create()
     $sucursalActiva = Sucursale::find($cajaAbierta->sucursal_id);
 
     // Obtener todos los productos con inventarios de la sucursal activa o categorías "sin stock"
-    $productos = Producto::with(['categoria', 'inventarios' => function ($query) use ($sucursalActiva) {
+    $productos = Producto::with(['categoria', 'unidadMedida', 'inventarios' => function ($query) use ($sucursalActiva) {
         $query->where('sucursal_id', $sucursalActiva->id);
     }])
     ->where(function ($query) use ($sucursalActiva) {

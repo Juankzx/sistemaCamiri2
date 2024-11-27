@@ -12,32 +12,51 @@
     <div class="row">
         <div class="col-md-12">
             <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Listado de Cajas</h3>
-                    
-                    @if ($cajaAbierta)
-                        <!-- Botón de cerrar caja en la cabecera con total de ventas -->
-                        <button class="btn btn-danger btn-sm float-right" data-toggle="modal" data-target="#cerrarCajaModal" 
-                                data-id="{{ $cajaAbierta->id }}" 
-                                data-ventas="{{ $montoVentas }}" 
-                                title="Cerrar Caja">
-                            <i class="fas fa-lock"></i> Cerrar Caja
-                        </button>
-                    @else
-                        <!-- Botones para abrir caja y redirigir a ventas -->
-                        <div class="btn-group float-right">
-                            <button class="btn btn-primary btn-sm" onclick="$('#abrirCajaModal').modal('show')">
-                                <i class="fas fa-cash-register"></i> Abrir Caja
-                            </button>
-                            @if(auth()->user()->hasRole('vendedor'))
-                                <a href="{{ route('ventas.index') }}" class="btn btn-secondary btn-sm">
-                                    <i class="fas fa-shopping-cart"></i> Ventas
-                                </a>
-                            @endif
-                        </div>
-                    @endif
-                    
-                </div>
+            <div class="card-header">
+    <h3 class="card-title">Listado de Cajas</h3>
+
+    @if ($cajaAbierta)
+        <!-- Botón de cerrar caja en la cabecera con total de ventas -->
+        <button 
+            class="btn btn-danger btn-sm float-right" 
+            {{-- Cambia entre data-toggle y data-bs-toggle según el rol --}}
+            @if(auth()->user()->hasRole('vendedor'))
+                data-bs-toggle="modal" 
+                data-bs-target="#cerrarCajaModal"
+            @else
+                data-toggle="modal" 
+                data-target="#cerrarCajaModal"
+            @endif
+            data-id="{{ $cajaAbierta->id }}" 
+            data-ventas="{{ $montoVentas }}" 
+            title="Cerrar Caja">
+            <i class="fas fa-lock"></i> Cerrar Caja
+        </button>
+    @else
+        <!-- Botones para abrir caja y redirigir a ventas -->
+        <div class="btn-group float-right">
+            <button 
+                class="btn btn-primary btn-sm float-right" 
+                {{-- Cambia entre data-toggle y data-bs-toggle según el rol --}}
+                @if(auth()->user()->hasRole('vendedor'))
+                    data-bs-toggle="modal" 
+                    data-bs-target="#abrirCajaModal"
+                @else
+                    data-toggle="modal" 
+                    data-target="#abrirCajaModal"
+                @endif>
+                <i class="fas fa-cash-register"></i> Abrir Caja
+            </button>
+            @if(auth()->user()->hasRole('vendedor'))
+                <a href="{{ route('ventas.index') }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-shopping-cart"></i> Ventas
+                </a>
+            @endif
+        </div>
+    @endif
+
+</div>
+
                 
 
                 <!-- Campos de búsqueda en vivo -->

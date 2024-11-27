@@ -61,4 +61,8 @@ class DetalleGuiaDespacho extends Model
             $detalle->calcularSubtotal();
         });
     }
+    public function detalleOrden()
+{
+    return $this->belongsTo(DetalleOrdenCompra::class, 'detalle_orden_id'); // Ajusta el campo según tu base de datos
+}
 }

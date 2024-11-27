@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends($isVendedor ? 'layouts.app' : 'adminlte::page')
 
 @section('title', 'Detalle Caja')
 
@@ -8,6 +8,9 @@
 
 @section('content')
 <div class="container">
+<a href="{{ route('cajas.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Volver
+    </a>
     <div class="card">
         <div class="card-body">
             <div class="row mb-3">

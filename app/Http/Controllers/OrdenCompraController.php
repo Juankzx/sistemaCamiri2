@@ -70,7 +70,8 @@ class OrdenCompraController extends Controller
             ]);
         }
 
-        return redirect()->route('ordenes.index')->with('success', 'Orden de Compra creada exitosamente.');
+        return redirect()->route('ordenes-compras.index')->with('success', 'Orden de Compra creada exitosamente.');
+
     }
 
     public function destroy($id)
@@ -115,5 +116,54 @@ public function exportarPdf($id)
     // Descargar el archivo PDF
     return $pdf->stream('orden_compra_' . $orden->numero_orden . '.pdf');
 }
+
+public function show($id)
+{
+    $orden = OrdenCompra::with(['proveedor', 'detalles.producto'])->findOrFail($id);
+
+    return view('ordenes.show', compact('orden'));
+}
+
+public function edit($id)
+    {
+        $ordenCompra = OrdenCompra::with(['detalles.producto', 'proveedor'])->findOrFail($id);
+    
+        $productos = Producto::all();
+
+        return view('ordenes.edit', compact('ordenCompra', 'productos'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $ordenCompra = OrdenCompra::with(['detalles'])->findOrFail($id);
+
+        // Validar los datos sin permitir la edición del estado
+        $validated = $request->validate([
+            
+            'detalles' => 'required|array',
+            'detalles.*.producto_id' => 'required|exists:productos,id',
+            'detalles.*.cantidad' => 'required|integer|min:1',
+        ]);
+
+  
+
+        // Actualizar los detalles de la orden de compra
+        $ordenCompra->detalles()->delete(); // Elimina los detalles existentes
+
+        foreach ($request->detalles as $detalle) {
+            DetalleOrdenCompra::create([
+                'orden_compra_id' => $ordenCompra->id,
+                'producto_id' => $detalle['producto_id'],
+                'cantidad' => $detalle['cantidad'],
+                'precio_compra' => 0, // Precio se actualizará en otro flujo si es necesario
+                'subtotal' => 0,
+            ]);
+        }
+
+        return redirect()->route('ordenes.index')->with('success', 'Orden de compra actualizada exitosamente.');
+    }
+
+
+
 
 }

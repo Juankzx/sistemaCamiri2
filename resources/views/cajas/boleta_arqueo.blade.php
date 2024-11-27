@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends($isVendedor ? 'layouts.app' : 'adminlte::page')
 
 @section('title', 'Boleta de Arqueo de Caja')
 

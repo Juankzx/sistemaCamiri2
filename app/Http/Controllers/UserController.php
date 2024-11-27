@@ -47,7 +47,7 @@ class UserController extends Controller
         'email' => 'required|string|email|max:255|unique:users',  // Valida que el email sea único en la tabla users
         'password' => 'required|string|min:8|confirmed',
         'role' => 'required|string',
-        'pin' => 'nullable|integer|unique:users,pin|min:100000|max:999999',
+        'pin' => 'nullable|string|regex:/^\d{6}$/|unique:users,pin', // Cambiar a string y validar con regex
     ]);
 
     // Crear el usuario en la base de datos

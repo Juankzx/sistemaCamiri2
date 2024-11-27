@@ -55,20 +55,26 @@
                         <td>{{ $orden->created_at->format('d/m/Y H:i:s') }}</td>
                         <td class="text-center">
                             <span class="badge {{ $orden->estado == 'solicitado' ? 'bg-danger' : ($orden->estado == 'entregado' ? 'bg-success' : ($orden->estado == 'en_transito' ? 'bg-warning' : 'bg-secondary') ) }}">
-                                {{ $orden->estado }}
+                                {{ ucfirst($orden->estado) }}
                             </span>
                         </td>
                         <td>
                             <a class="btn btn-sm btn-primary" href="{{ route('ordenes-compras.show', $orden->id) }}">
                                 <i class="fa fa-fw fa-eye"></i>
                             </a>
-                            <a href="{{ route('ordenes-compras.edit', $orden) }}" class="btn btn-sm btn-info">
-                                <i class="fa fa-fw fa-edit"></i>
-                            </a>
+                            @if ($orden->estado === 'solicitado')
+                                <a href="{{ route('ordenes-compras.edit', $orden->id) }}" class="btn btn-sm btn-info">
+                                    <i class="fa fa-fw fa-edit"></i>
+                                </a>
+                            @else
+                                <button type="button" class="btn btn-sm btn-secondary" disabled>
+                                    <i class="fa fa-fw fa-edit"></i>
+                                </button>
+                            @endif
                             <a href="{{ route('ordenes-compras.exportarPdf', $orden->id) }}" class="btn btn-sm btn-danger" target="_blank">
                                 <i class="fa fa-fw fa-file-pdf"></i>
                             </a>
-                            <form action="{{ route('ordenes-compras.destroy', $orden) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('¿Está seguro de que desea eliminar esta orden de compra? Esta acción no se puede deshacer.');">
+                            <form action="{{ route('ordenes-compras.destroy', $orden->id) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('¿Está seguro de que desea eliminar esta orden de compra? Esta acción no se puede deshacer.');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-sm">

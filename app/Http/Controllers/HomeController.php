@@ -35,18 +35,30 @@ class HomeController extends Controller
 
         $productosBajoStock = Producto::whereHas('inventarios', fn($q) => $q->where('cantidad', '<', 10))->count();
 
-        $productosMasVendidos = Producto::withSum('detallesVentas as total_vendido', 'cantidad')
-            ->orderByDesc('total_vendido')
-            ->limit(5)
-            ->get();
-
-        $productosMenosVendidos = Producto::withSum('detallesVentas as total_vendido', 'cantidad')
-            ->orderBy('total_vendido')
-            ->limit(5)
-            ->get();
-
-        $ultimasOrdenesCompra = OrdenCompra::latest()->limit(5)->get();
-        $ultimasfacturas = Factura::latest()->limit(5)->get();
+        $productosMasVendidos = Producto::whereHas('inventarios', function ($query) use ($sucursalId) {
+            $query->where('sucursal_id', $sucursalId);
+        })
+        ->withSum('detallesVentas as total_vendido', 'cantidad')
+        ->orderByDesc('total_vendido')
+        ->limit(5)
+        ->get();
+        
+        $productosMenosVendidos = Producto::whereHas('inventarios', function ($query) use ($sucursalId) {
+            $query->where('sucursal_id', $sucursalId);
+        })
+        ->withSum('detallesVentas as total_vendido', 'cantidad')
+        ->orderBy('total_vendido')
+        ->limit(5)
+        ->get();
+        $ultimasfacturaspagadas = Factura::where('estado_pago', 'pagado') // Filtrar solo facturas pendientes
+        ->latest() // Ordenar desde la más reciente
+        ->limit(5) // Limitar a las últimas 5
+        ->get(); // Obtener los registros
+        
+        $ultimasfacturaspendientes = Factura::where('estado_pago', 'pendiente') // Filtrar solo facturas pendientes
+    ->latest() // Ordenar desde la más reciente
+    ->limit(5) // Limitar a las últimas 5
+    ->get(); // Obtener los registros
 
         // Asegúrate de que estas variables estén definidas correctamente
         $ventasSemanaActual = Venta::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
@@ -76,8 +88,8 @@ class HomeController extends Controller
             // Vista completa para root y administrador
             return view('dashboard.complete', compact(
                 'sucursales', 'ventasHoy', 'ventasMes', 'comprasMes', 'productosBajoStock', 
-                'productosMasVendidos', 'productosMenosVendidos', 'ultimasOrdenesCompra', 
-                'ultimasfacturas', 'ventasSemanaActualData', 'ventasSemanaAnteriorData', 'sucursalId', 'user'
+                'productosMasVendidos', 'productosMenosVendidos', 'ultimasfacturaspagadas', 
+                'ultimasfacturaspendientes', 'ventasSemanaActualData', 'ventasSemanaAnteriorData', 'sucursalId', 'user'
             ));
         } elseif ($user->hasRole('bodeguero')) {
             // Vista simplificada para bodeguero

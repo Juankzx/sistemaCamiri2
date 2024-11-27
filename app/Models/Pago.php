@@ -15,7 +15,8 @@ class Pago extends Model
         'monto', 
         'fecha_pago', 
         'numero_transferencia', 
-        'estado_pago'
+        'estado_pago',
+        'descripcion'
     ];
 
     /**
@@ -33,6 +34,11 @@ class Pago extends Model
     {
         return $this->belongsTo(MetodosPago::class, 'metodo_pago_id');
     }
+
+    public function guiaDespacho()
+{
+    return $this->belongsTo(GuiaDespacho::class, 'guia_despacho_id');
+}
 
     /**
      * Evento boot para manejar acciones después de crear un pago

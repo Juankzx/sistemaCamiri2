@@ -89,6 +89,9 @@ class Producto extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-
+    public function detallesOrdenCompra()
+    {
+        return $this->hasMany(DetalleOrdenCompra::class, 'producto_id', 'id');
+    }
     
 }

@@ -35,7 +35,10 @@ class GuiaDespacho extends Model
         return $this->hasMany(DetalleGuiaDespacho::class, 'guia_despacho_id');
     }
 
-    
+    public function user()
+{
+    return $this->belongsTo(User::class, 'user_id'); // Ajusta 'user_id' según tu base de datos
+}
 
     /**
      * Relación con Facturas asociadas a esta Guía de Despacho.

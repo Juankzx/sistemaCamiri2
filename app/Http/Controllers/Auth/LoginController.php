@@ -68,7 +68,7 @@ public function loginWithPin(Request $request)
     \Log::info('Datos recibidos en loginWithPin:', $request->all());
     
     $request->validate([
-        'pin' => 'required|integer|digits:6',
+        'pin' => 'required|string|digits:6',
     ]);
 
     $user = User::where('pin', $request->pin)->whereHas('roles', function ($query) {

@@ -25,11 +25,25 @@ class CajaController extends Controller
 
     public function index()
     {
+        $user = auth()->user(); // Usuario autenticado
+        // Si es un vendedor, mostrar solo sus propias cajas
+    if ($user->hasRole('vendedor')) {
+        $cajas = Caja::where('user_id', $user->id)
+            ->with('sucursal', 'user')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+    } else {
+        // Si no es vendedor (por ejemplo, administrador), mostrar todas las cajas
         $cajas = Caja::with('sucursal', 'user')
-        ->orderBy('created_at', 'desc') // Ordenar por la fecha de creación en orden descendente
-        ->paginate(15);
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+    }
+        
         $sucursales = Sucursale::all();
-        $cajaAbierta = Caja::where('estado', true)->first();
+
+        $cajaAbierta = Caja::where('estado', true)
+        ->where('user_id', $user->id) // Solo la caja abierta del usuario autenticado
+        ->first();
 
         // Calcular el monto total de ventas durante el periodo de caja abierta
         $montoVentas = 0;
@@ -68,6 +82,13 @@ class CajaController extends Controller
             'monto_cierre' => 'required|numeric',
         ]);
 
+        $caja = Caja::findOrFail($id);
+
+    // Verificar que el usuario tenga acceso a esta caja
+    if (auth()->user()->hasRole('vendedor') && auth()->user()->id !== $caja->user_id) {
+        abort(403, 'No tienes permiso para cerrar esta caja.');
+    }
+
         DB::beginTransaction();
         try {
             $caja = Caja::findOrFail($id);
@@ -89,6 +110,11 @@ class CajaController extends Controller
     {
         // Obtener la caja por su ID
         $caja = Caja::findOrFail($id);
+
+        // Si el usuario es vendedor, verificar que sea propietario de la caja
+    if (auth()->user()->hasRole('vendedor') && auth()->user()->id !== $caja->user_id) {
+        abort(403, 'No tienes permiso para acceder a esta caja.');
+    }
 
         // Obtener las ventas realizadas durante el periodo de apertura de la caja
         $fechaCierre = $caja->fecha_cierre ? $caja->fecha_cierre : now();

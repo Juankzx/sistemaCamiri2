@@ -66,7 +66,7 @@
                 </div>
 
                 <!-- PIN (solo para vendedores) -->
-                <div class="form-group">
+                <div class="form-group" id="pin-field" style="display: none;">
                     <label for="pin">PIN</label>
                     <input type="text" name="pin" id="pin" class="form-control" placeholder="Ingrese un PIN de 6 dígitos" maxlength="6" pattern="\d{6}" title="El PIN debe contener exactamente 6 números" value="{{ old('pin') }}">
                 </div>
@@ -76,9 +76,7 @@
                     <button type="submit" class="btn btn-primary btn-sm">
                         <i class="fa fa-save"></i> Guardar
                     </button>
-                    <a href="{{ route('users.index') }}" class="btn btn-secondary btn-sm">
-                        <i class="fa fa-arrow-left"></i> Volver
-                    </a>
+                    
                 </div>
             </form>
         </div>
@@ -90,26 +88,27 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const roleSelect = document.getElementById('role');
-        const pinField = document.getElementById('pin-field');
+        const roleSelect = document.getElementById('role'); // Campo de selección de rol
+        const pinField = document.getElementById('pin-field'); // Contenedor del PIN
         const pinInput = document.getElementById('pin'); // Input del PIN
 
-        // Mostrar/ocultar el campo de PIN según el rol seleccionado
-        roleSelect.addEventListener('change', function () {
-            if (this.value === 'vendedor') {
+        // Función para gestionar la visibilidad del campo PIN
+        const togglePinField = () => {
+            if (roleSelect.value === 'vendedor') {
                 pinField.style.display = 'block';
             } else {
                 pinField.style.display = 'none';
                 pinInput.value = ''; // Limpiar el campo PIN si no es vendedor
             }
-        });
+        };
 
-        // Activar la visualización del campo PIN si ya estaba seleccionado
-        if (roleSelect.value === 'vendedor') {
-            pinField.style.display = 'block';
-        }
+        // Evento: cuando se cambia el rol
+        roleSelect.addEventListener('change', togglePinField);
 
-        // Validación en tiempo real para permitir solo 6 dígitos numéricos en el PIN
+        // Llamar a la función al cargar la página (por si ya está seleccionado)
+        togglePinField();
+
+        // Validación en tiempo real para el PIN (solo números y 6 dígitos)
         pinInput.addEventListener('input', function () {
             const maxLength = 6;
             const numericPattern = /^\d*$/; // Solo números permitidos
@@ -142,4 +141,3 @@
     });
 </script>
 @endsection
-
