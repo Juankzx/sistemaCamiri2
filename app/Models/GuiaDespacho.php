@@ -63,24 +63,5 @@ class GuiaDespacho extends Model
         );
     }
 
-    /**
-     * Actualiza el stock en la bodega general con los productos de los detalles de la guía.
-     */
-    public function actualizarStockBodegaGeneral()
-    {
-        foreach ($this->detalles as $detalle) {
-            Inventario::addStock($detalle->producto_id, $detalle->cantidad_entregada, 1); // Bodega General ID = 1
-        }
-    }
 
-    /**
-     * Calcula y actualiza el total de la Guía de Despacho.
-     */
-    public function actualizarTotal()
-    {
-        $this->total = $this->detalles->sum(function ($detalle) {
-            return $detalle->cantidad_entregada * $detalle->precio_compra;
-        });
-        $this->save();
-    }
 }

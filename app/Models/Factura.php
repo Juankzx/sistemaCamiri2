@@ -27,6 +27,12 @@ class Factura extends Model
     {
         return $this->belongsTo(GuiaDespacho::class, 'guia_despacho_id');
     }
+    
+    public function factura()
+{
+    return $this->belongsTo(Factura::class);
+}
+
 
     /**
      * Relación a través de GuiaDespacho para acceder a OrdenCompra
@@ -54,4 +60,7 @@ class Factura extends Model
     {
         return $this->estado_pago === 'pagado';
     }
+
+    
+
 }

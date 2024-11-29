@@ -65,25 +65,10 @@ class Inventario extends Model
     }
     
 
-  // En el modelo Inventario
-    public static function addStock($productoId, $cantidad, $bodegaId)
-    {
-        // Busca la entrada de inventario para el producto en la bodega general (bodegaId)
-        $inventario = self::where('producto_id', $productoId)->where('bodega_id', $bodegaId)->first();
+  
 
-        if ($inventario) {
-            // Si ya existe, suma la cantidad al stock existente
-            $inventario->cantidad += $cantidad;
-            $inventario->save();
-        } else {
-            // Si no existe, crea una nueva entrada de inventario para este producto en la bodega general
-            self::create([
-                'producto_id' => $productoId,
-                'bodega_id' => $bodegaId,
-                'cantidad' => $cantidad,
-            ]);
-        }
-    }
+
+  
 
     
 }

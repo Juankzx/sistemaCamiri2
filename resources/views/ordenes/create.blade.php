@@ -28,16 +28,18 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
+                        <!-- Número de Orden Actual -->
                         <div class="form-group">
-                            <label for="numero_orden">Número de Orden</label>
-                            <input type="text" class="form-control" id="numero_orden" name="numero_orden" value="{{ $nuevoNumeroOrden }}" readonly>
+                            <label for="numero_orden_actual">Número de Orden Actual</label>
+                            <input type="text" class="form-control" id="numero_orden_actual" value="{{ $nuevoNumeroOrden }}" readonly>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
+                        <!-- Selección de Proveedor -->
                         <div class="form-group">
                             <label for="proveedor_id">Proveedor</label>
-                            <select class="form-control" id="proveedor_id" name="proveedor_id" required onchange="filtrarProductosPorProveedor()">
+                            <select class="form-control" id="proveedor_id" name="proveedor_id" required>
                                 <option value="">Seleccione un proveedor</option>
                                 @foreach($proveedores as $proveedor)
                                     <option value="{{ $proveedor->id }}">{{ $proveedor->nombre }}</option>
@@ -52,8 +54,13 @@
         <!-- Buscador de productos -->
         <div class="form-group">
             <label for="buscarProducto">Buscar Producto</label>
-            <input type="text" class="form-control mb-2" id="buscarProducto" placeholder="Escriba para buscar un producto..." oninput="filtrarProductos()">
-            <ul id="listaProductos" class="list-group mb-3" style="background-color: #f5f5f5; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto;">
+            <input type="text" id="buscarProducto" class="form-control mb-2" placeholder="Escriba para buscar un producto..." disabled>
+            <ul id="listaProductos" class="list-group mb-3" 
+                style="background-color: #f5f5f5; 
+                    border-radius: 5px; 
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+                    max-height: 200px; 
+                    overflow-y: auto;">
                 <!-- Los productos se mostrarán aquí -->
             </ul>
         </div>
@@ -64,20 +71,18 @@
                 <h4>Detalles de la Orden de Compra</h4>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped" id="detallesOrdenCompra">
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Cantidad</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Aquí se insertarán dinámicamente los detalles -->
-                        </tbody>
-                    </table>
-                </div>
+                <table class="table table-bordered table-striped" id="detallesOrdenCompra">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Los productos seleccionados aparecerán aquí -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -89,112 +94,102 @@
         </div>
     </form>
 </div>
+@stop
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+@section('js')
 <script>
-    const productos = [
-        @foreach($productos as $producto)
-            {
-                id: "{{ $producto->id }}",
-                nombre: "{{ $producto->nombre }}",
-                codigo_barra: "{{ $producto->codigo_barra }}",
-                proveedor_id: "{{ $producto->proveedor->id ?? '' }}",
-                proveedor: "{{ $producto->proveedor->nombre ?? 'Sin Proveedor' }}"
-            },
-        @endforeach
-    ];
+document.addEventListener('DOMContentLoaded', function () {
+    const productosAgregados = new Set(); // Para almacenar los productos seleccionados
+    const listaProductos = document.getElementById('listaProductos');
+    const tbody = document.querySelector('#detallesOrdenCompra tbody');
+    const proveedorSelect = document.getElementById('proveedor_id');
+    const buscarInput = document.getElementById('buscarProducto');
 
-    let productosAgregados = new Set();  // Para almacenar los productos agregados
+    // Productos cargados desde el backend
+    const productos = @json($productos);
 
-    // Función para filtrar productos por proveedor seleccionado y limpiar productos previos
-    function filtrarProductosPorProveedor() {
-        const proveedorId = document.getElementById('proveedor_id').value;
+    // Mostrar productos solo si se selecciona un proveedor
+    proveedorSelect.addEventListener('change', function () {
+        const proveedorId = this.value;
+        productosAgregados.clear(); // Limpiar productos seleccionados previos
+        tbody.innerHTML = ''; // Limpiar la tabla de detalles
 
-        // Limpiar la tabla de detalles y el conjunto de productos agregados
-        const detallesTable = document.querySelector('#detallesOrdenCompra tbody');
-        detallesTable.innerHTML = '';
-        productosAgregados.clear();
+        if (proveedorId) {
+            buscarInput.disabled = false; // Habilitar búsqueda
+            filtrarProductos(); // Mostrar productos al cambiar proveedor
+        } else {
+            buscarInput.disabled = true; // Deshabilitar búsqueda
+            listaProductos.innerHTML = ''; // Limpiar lista de productos
+        }
+    });
 
-        // Filtrar y mostrar productos según el proveedor seleccionado
-        const lista = document.getElementById('listaProductos');
-        lista.innerHTML = '';
+    // Evento de búsqueda en vivo
+    buscarInput.addEventListener('input', filtrarProductos);
 
-        const productosFiltrados = productos.filter(p => p.proveedor_id === proveedorId);
-        
-        productosFiltrados.forEach(producto => {
-            const li = document.createElement('li');
-            li.className = 'list-group-item list-group-item-action';
-            li.style.cursor = 'pointer';
-            li.innerHTML = `${producto.nombre} - ${producto.codigo_barra} - ${producto.proveedor}`;
-            li.onclick = () => seleccionarProducto(producto);
-            lista.appendChild(li);
-        });
-    }
-
-    // Función de búsqueda en vivo
+    // Función para filtrar productos y mostrarlos en el buscador
     function filtrarProductos() {
-        const query = document.getElementById('buscarProducto').value.toLowerCase();
-        const proveedorId = document.getElementById('proveedor_id').value;
-        const lista = document.getElementById('listaProductos');
-        lista.innerHTML = '';
+        const proveedorId = proveedorSelect.value;
+        const query = buscarInput.value.toLowerCase();
 
-        const productosFiltrados = productos.filter(p => p.proveedor_id === proveedorId && p.nombre.toLowerCase().includes(query));
-        
+        if (!proveedorId) return; // Si no hay proveedor seleccionado, no filtrar
+
+        const productosFiltrados = productos.filter(p => 
+            p.proveedor_id == proveedorId && 
+            !productosAgregados.has(p.id) && 
+            (p.nombre.toLowerCase().includes(query) || p.codigo_barra.includes(query))
+        );
+
+        listaProductos.innerHTML = '';
+
         productosFiltrados.forEach(producto => {
             const li = document.createElement('li');
             li.className = 'list-group-item list-group-item-action';
+            li.textContent = `${producto.nombre} - ${producto.codigo_barra}`;
             li.style.cursor = 'pointer';
-            li.innerHTML = `${producto.nombre} - ${producto.codigo_barra} - ${producto.proveedor}`;
-            li.onclick = () => seleccionarProducto(producto);
-            lista.appendChild(li);
+            li.onclick = () => agregarProducto(producto);
+            listaProductos.appendChild(li);
         });
     }
 
     // Función para agregar producto a la tabla de detalles
-    function seleccionarProducto(producto) {
-        if (productosAgregados.has(producto.id)) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Producto duplicado',
-                text: 'Este producto ya ha sido agregado.',
-            });
-            return;
-        }
+    function agregarProducto(producto) {
+        if (productosAgregados.has(producto.id)) return; // Evitar duplicados
 
-        const container = document.querySelector('#detallesOrdenCompra tbody');
-        const index = container.children.length;
+        const index = tbody.children.length;
+        productosAgregados.add(producto.id); // Agregar producto a la lista de seleccionados
 
-        const html = `
+        const row = `
             <tr class="detail-group">
                 <td>
                     <input type="hidden" name="detalles[${index}][producto_id]" value="${producto.id}">
-                    ${producto.nombre} - ${producto.codigo_barra} - ${producto.proveedor}
+                    ${producto.nombre} (${producto.codigo_barra})
                 </td>
                 <td>
                     <input type="number" class="form-control" name="detalles[${index}][cantidad]" required placeholder="Cantidad">
                 </td>
                 <td>
-                    <button type="button" class="btn btn-danger btn-sm" onclick="removeDetail(this)">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProducto(${producto.id}, this)">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </td>
             </tr>
         `;
 
-        container.insertAdjacentHTML('beforeend', html);
-        productosAgregados.add(producto.id);
-        document.getElementById('buscarProducto').value = '';
-        filtrarProductos();
+        tbody.insertAdjacentHTML('beforeend', row);
+        buscarInput.value = ''; // Limpiar el input de búsqueda
+        filtrarProductos(); // Actualizar lista de productos disponibles
     }
 
-    // Función para eliminar un producto de la tabla de detalles
-    function removeDetail(element) {
-        const detailRow = element.closest('.detail-group');
-        const productoId = detailRow.querySelector('input[type="hidden"]').value;
-        productosAgregados.delete(productoId);
-        detailRow.remove();
-    }
+    // Función para eliminar producto de la tabla de detalles y regresarlo al buscador
+    window.eliminarProducto = function (productoId, boton) {
+        productosAgregados.delete(productoId); // Quitar producto de la lista de seleccionados
+        boton.closest('tr').remove(); // Remover fila de la tabla
+        filtrarProductos(); // Actualizar lista de productos disponibles
+    };
+
+    // Inicializar estado de entrada de búsqueda
+    buscarInput.disabled = true;
+});
 </script>
 
-@endsection
+@stop

@@ -37,42 +37,66 @@ class OrdenCompraController extends Controller
     }
 
     public function create()
-    {
-        $proveedores = Proveedore::all();
-        $productos = Producto::all();
-        $nuevoNumeroOrden = $this->generateOrderNumber();
+{
+    $proveedores = Proveedore::all();
+    $productos = Producto::whereHas('categoria', function ($query) {
+        $query->where('sin_stock', '!=', 1);
+    })->get();
+    
 
-        return view('ordenes.create', compact('proveedores', 'productos', 'nuevoNumeroOrden'));
-    }
+    $ultimoNumero = OrdenCompra::max('numero_orden') ?? 0;
+    $nuevoNumeroOrden = $ultimoNumero + 1;
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'proveedor_id' => 'required|exists:proveedores,id',
-            'detalles' => 'required|array',
-            'detalles.*.producto_id' => 'required|exists:productos,id',
-            'detalles.*.cantidad' => 'required|integer|min:1',
-        ]);
+    return view('ordenes.create', compact('proveedores', 'productos', 'nuevoNumeroOrden'));
+}
+
+
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'proveedor_id' => 'required|exists:proveedores,id',
+        'detalles' => 'required|array|min:1',
+        'detalles.*.producto_id' => 'required|exists:productos,id',
+        'detalles.*.cantidad' => 'required|integer|min:1',
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        $ultimoNumeroOrden = OrdenCompra::max('numero_orden') ?? 0;
+        $proximoNumeroOrden = $ultimoNumeroOrden + 1;
 
         $orden = OrdenCompra::create([
             'proveedor_id' => $request->proveedor_id,
-            'numero_orden' => $request->numero_orden,
-            'estado' => 'solicitado'
+            'numero_orden' => $proximoNumeroOrden,
+            'estado' => 'solicitado',
         ]);
 
         foreach ($request->detalles as $detalle) {
+            $producto = Producto::findOrFail($detalle['producto_id']);
             DetalleOrdenCompra::create([
                 'orden_compra_id' => $orden->id,
-                'producto_id' => $detalle['producto_id'],
+                'producto_id' => $producto->id,
                 'cantidad' => $detalle['cantidad'],
-                'precio_compra' => 0,
-                'subtotal' => 0,
+                'subtotal' => $producto->precio_compra * $detalle['cantidad'],
             ]);
         }
 
-        return redirect()->route('ordenes-compras.index')->with('success', 'Orden de Compra creada exitosamente.');
+        $orden->calcularTotal();
 
+        DB::commit();
+
+        return redirect()->route('ordenes-compras.index')
+            ->with('success', 'Orden de Compra creada exitosamente.');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error("Error al crear la orden de compra: " . $e->getMessage());
+        return redirect()->back()->with('error', 'Error al crear la orden de compra.');
     }
+}
+    
+    
+    
 
     public function destroy($id)
 {
@@ -97,13 +121,6 @@ class OrdenCompraController extends Controller
         \Log::error("Error al eliminar la orden de compra: " . $e->getMessage());
         return redirect()->route('ordenes.index')->with('error', 'No se pudo eliminar la orden de compra: ' . $e->getMessage());
     }
-}
-
-// Método para generar un número de orden único
-private function generateOrderNumber()
-{
-    $ultimoNumeroOrden = OrdenCompra::max('numero_orden') ?? 0;
-    return $ultimoNumeroOrden + 1;
 }
 
 public function exportarPdf($id)

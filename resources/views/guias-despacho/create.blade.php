@@ -80,9 +80,19 @@
 @section('js')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
 <script>
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('es-CL', {
+        style: 'currency',
+        currency: 'CLP',
+        minimumFractionDigits: 0,
+    }).format(value);
+};
+
+
 document.addEventListener('DOMContentLoaded', function () {
     const fechaEntregaInput = document.getElementById('fecha_entrega');
 
@@ -196,37 +206,38 @@ document.addEventListener('DOMContentLoaded', function () {
         updateTotal();
     }
 
-    // Generar fila en la tabla de detalles
-    function generateRow(nombreProducto = "", cantidad = "", precioCompra = "", index, readonly = false, productoId = null) {
-        return `
-            <tr class="product-row">
-                <td>
-                    <!-- Campo oculto para producto_id -->
-                    <input type="hidden" name="detalles[${index}][producto_id]" value="${productoId || ''}" required>
-                    <input type="text" class="form-control" value="${nombreProducto}" readonly>
-                </td>
-                ${
-                    readonly
-                        ? `<td><input type="number" class="form-control" name="detalles[${index}][cantidad]" value="${cantidad}" readonly></td>`
-                        : ""
-                }
-                <td>
-                    <input type="number" class="form-control" name="detalles[${index}][cantidad_entregada]" min="1" placeholder="Cantidad" value="" oninput="validateCantidad(${index}); updateSubtotal(${index})" required>
-                </td>
-                <td>
-                    <input type="number" class="form-control" name="detalles[${index}][precio_compra]" min="0.01" step="0.01" placeholder="Precio" value="${precioCompra}" oninput="updateSubtotal(${index})" required>
-                </td>
-                <td>
-                    <input type="number" class="form-control subtotal" name="detalles[${index}][subtotal]" value="0" readonly>
-                </td>
-                <td>
-                    <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-    }
+   // Generar fila en la tabla de detalles
+function generateRow(nombreProducto = "", cantidad = "", precioCompra = "", index, readonly = false, productoId = null) {
+    return `
+        <tr class="product-row">
+            <td>
+                <!-- Campo oculto para producto_id -->
+                <input type="hidden" name="detalles[${index}][producto_id]" value="${productoId || ''}" required>
+                <input type="text" class="form-control" value="${nombreProducto}" readonly>
+            </td>
+            ${
+                readonly
+                    ? `<td><input type="number" class="form-control" name="detalles[${index}][cantidad]" value="${cantidad}" readonly></td>`
+                    : `<td><input type="text" class="form-control" name="detalles[${index}][cantidad]" value="N/A" readonly></td>`
+            }
+            <td>
+                <input type="number" class="form-control" name="detalles[${index}][cantidad_entregada]" min="1" placeholder="Cantidad" value="" oninput="validateCantidad(${index}); updateSubtotal(${index})" required>
+            </td>
+            <td>
+                <input type="number" class="form-control" name="detalles[${index}][precio_compra]" min="0.01" step="0.01" placeholder="Precio" value="${precioCompra}" oninput="updateSubtotal(${index})" required>
+            </td>
+            <td>
+                <input type="number" class="form-control subtotal" name="detalles[${index}][subtotal]" value="0" readonly>
+            </td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
 
     // Validar que la cantidad entregada no exceda la solicitada
     window.validateCantidad = function (index) {
@@ -255,11 +266,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Actualizar el total general
     function updateTotal() {
-        const subtotales = document.querySelectorAll('.subtotal');
-        let total = 0;
-        subtotales.forEach(subtotal => total += parseFloat(subtotal.value) || 0);
-        document.getElementById('total').innerText = `$${total.toFixed(0)}`;
-    }
+    const subtotales = document.querySelectorAll('.subtotal');
+    let total = 0;
+
+    // Suma los subtotales
+    subtotales.forEach(subtotal => {
+        const value = parseFloat(subtotal.value || subtotal.textContent.replace(/[^0-9.-]+/g, "")) || 0;
+        total += value;
+    });
+
+    // Actualiza el total general con formato de moneda
+    document.getElementById('total').innerText = formatCurrency(total);
+}
 
     // Eliminar fila de la tabla
     window.removeRow = function (button) {

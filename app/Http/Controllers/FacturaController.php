@@ -7,11 +7,22 @@ use App\Models\Factura;
 use App\Models\Proveedore;
 use App\Models\OrdenCompra;
 use Illuminate\Http\Request;
+use App\Models\Pago;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Services\InventarioService;
+use App\Services\EstadoService;
 
 class FacturaController extends Controller
 {
-    public function __construct()
+    protected $estadoService;
+    protected $inventarioService;
+
+    public function __construct(EstadoService $estadoService, InventarioService $inventarioService)
 {
+    $this->estadoService = $estadoService;
+    $this->inventarioService = $inventarioService;
+
     $this->middleware(function ($request, $next) {
         if (auth()->check() && auth()->user()->hasRole('vendedor')) {
             abort(403, 'No tienes permiso para acceder a esta página.');
@@ -19,6 +30,18 @@ class FacturaController extends Controller
         return $next($request);
     });
 }
+
+public function actualizarEstado($id, Request $request)
+{
+    $factura = Factura::findOrFail($id);
+    $nuevoEstado = $request->input('estado_pago');
+
+    $this->estadoService->actualizarEstadoFactura($factura, $nuevoEstado);
+
+    return redirect()->back()->with('success', 'Estado de la Factura actualizado correctamente.');
+}
+
+
 
 
     public function index()
@@ -39,30 +62,41 @@ class FacturaController extends Controller
 
     public function store(Request $request)
     {
-        // Validación de los datos recibidos
-        $validatedData = $request->validate([
-            'guia_despacho_id' => 'nullable|exists:guias_despacho,id',
-            'numero_factura' => 'required|string|unique:facturas,numero_factura',
-            'fecha_emision' => 'required|date',
-            'monto_total' => 'required|numeric|min:0',
-            'estado_pago' => 'required|in:pendiente,pagado',
-        ]);
-
         try {
-            // Crear la factura y asociarla a la guía de despacho
-            $factura = Factura::create($validatedData);
-
-            // Actualizar el estado de la guía de despacho si el estado de pago es "pagado"
-            if ($factura->estado_pago === 'pagado') {
-                $guiaDespacho = GuiaDespacho::findOrFail($validatedData['guia_despacho_id']);
-                $guiaDespacho->update(['estado' => 'entregada']);
-            }
-
-            return redirect()->route('facturas.index')->with('success', 'Factura creada exitosamente.');
+            // Validación de los datos recibidos
+            $validated = $request->validate([
+                'guia_despacho_id' => 'nullable|exists:guias_despacho,id',
+                'numero_factura' => 'required|string|unique:facturas,numero_factura',
+                'fecha_emision' => 'required|date',
+                'monto_total' => 'required|numeric|min:0',
+                'estado_pago' => 'required|in:pendiente,pagado',
+            ]);
+    
+            DB::beginTransaction();
+    
+            // Crear la factura y asociarla a la guía de despacho si existe
+            $factura = Factura::create($validated);
+    
+            // Crear el pago automáticamente asociado a la factura
+            Pago::create([
+                'factura_id' => $factura->id,
+                'metodo_pago_id' => null, // Pendiente de asignación
+                'monto' => $factura->monto_total,
+                'fecha_pago' => now(),
+                'estado_pago' => 'pendiente',
+                'descripcion' => 'Pago generado automáticamente al crear la factura.'
+            ]);
+    
+            DB::commit();
+    
+            return redirect()->route('facturas.index')->with('success', 'Factura creada y pago asociado generado correctamente.');
         } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al crear la factura: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error al crear la factura: ' . $e->getMessage());
         }
     }
+    
 
     public function show(Factura $factura)
     {

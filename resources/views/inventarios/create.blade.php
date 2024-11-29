@@ -142,7 +142,7 @@
                     tabla.row.add([
                         productoTexto,
                         '<select class="form-control" name="bodega_id['+ productoId +']">@foreach($bodegas as $bodega)<option value="{{ $bodega->id }}">{{ $bodega->nombre }}</option>@endforeach</select>',
-                        '<input type="number" class="form-control" name="cantidad['+ productoId +']" value="1" required>',
+                        '<input type="number" class="form-control" name="cantidad['+ productoId +']" value="0" required>',
                         '<input type="number" class="form-control" name="stock_minimo['+ productoId +']" value="0" required>',
                         '<input type="number" class="form-control" name="stock_critico['+ productoId +']" value="0" required>',
                         '<button type="button" class="btn btn-danger btn-sm" onclick="eliminarProducto(this, \'' + productoId + '\')">X</button>'

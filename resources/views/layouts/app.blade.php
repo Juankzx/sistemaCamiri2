@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Sistema Camiri') }}</title>
+    <title>Punto de Venta</title>
 
     <!-- AdminLTE CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
@@ -56,7 +56,7 @@
         <nav class="main-header navbar navbar-expand navbar-light">
             <div class="container">
                 <a href="{{ url('/') }}" class="navbar-brand">
-                    {{ config('app.name', 'Sistema Camiri') }}
+                    {{ 'POS' }}
                 </a>
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item dropdown">

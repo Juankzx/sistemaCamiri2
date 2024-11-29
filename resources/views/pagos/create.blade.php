@@ -22,44 +22,6 @@
                 </div>
             </div>
 
-            <!-- Info row -->
-            <div class="row invoice-info">
-                <div class="col-sm-4 invoice-col">
-                    <div class="form-group">
-                        <label for="factura_id">Factura</label>
-                        <select class="form-control" id="factura_id" name="factura_id" onchange="loadInvoiceDetails()">
-                            <option value="" disabled selected>Seleccione una Factura</option>
-                            @foreach($facturas as $factura)
-                                <option value="{{ $factura->id }}">N°: {{ $factura->numero_factura }} - Proveedor: {{ $factura->guiaDespacho->ordenCompra->proveedor->nombre ?? 'Sin proveedor' }} - Total: ${{ $factura->monto_total }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-sm-4 invoice-col">
-                    <address id="proveedor_info">
-                        <strong>Seleccione una factura</strong><br>
-                    </address>
-                </div>
-            </div>
-
-            <!-- Details row -->
-            <div id="detalles_factura_container" style="display: none;">
-    <h5>Detalles de la Orden de Compra</h5>
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Producto</th>
-                <th>Cantidad</th>
-                <th>Precio Compra</th>
-                <th>Subtotal</th>
-            </tr>
-        </thead>
-        <tbody id="detalles_factura">
-            <!-- Aquí se cargarán los detalles de la factura -->
-        </tbody>
-    </table>
-</div>
-
             <div class="row">
                 <!-- Payment method column -->
                 <div class="col-12">
@@ -79,7 +41,7 @@
 
                     <div class="form-group">
                         <label for="monto">Monto</label>
-                        <input type="number" class="form-control" id="monto" name="monto" readonly>
+                        <input type="number" class="form-control" id="monto" name="monto">
                     </div>
                     <div class="form-group" id="transferencia-group" style="display: none;">
                         <label for="numero_transferencia">Número de Transferencia</label>
@@ -113,30 +75,7 @@
 
 <script>
     
-    document.addEventListener('DOMContentLoaded', function () {
-    // Inicializar select2 para el campo de facturas
-    $('#factura_id').select2({
-        placeholder: 'Seleccione una Factura',
-        allowClear: true,
-        width: '100%',
-        templateResult: function (data) {
-            if (!data.id) {
-                return data.text;
-            }
-            const [numeroFactura, proveedor, total] = data.text.split(' - ');
-            return $(`
-                <div>
-                    <strong>${numeroFactura}</strong><br>
-                    <small>${proveedor}</small><br>
-                    <small>Total: ${total}</small>
-                </div>
-            `);
-        },
-        templateSelection: function (data) {
-            return data.text ? data.text.split(' - ')[0] : ''; // Mostrar solo el número de factura
-        }
-    });
-
+    
     // Establecer fecha y hora actual al iniciar
     const fechaPagoInput = document.getElementById('fecha_pago');
     const now = new Date();
@@ -146,40 +85,6 @@
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     fechaPagoInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-
-    // Simular el cambio inicial en el selector para configurar la vista inicial
-    document.getElementById('factura_id').dispatchEvent(new Event('change'));
-});
-
-// Función para manejar el cambio en el selector de facturas
-function loadInvoiceDetails() {
-    const facturaSelect = document.getElementById('factura_id');
-    const facturaId = facturaSelect.value;
-    const descripcionGroup = document.getElementById('descripcion-group');
-    const detallesContainer = document.getElementById('detalles_factura_container');
-    const detallesTableBody = document.getElementById('detalles_factura');
-    const montoInput = document.getElementById('monto');
-    const proveedorInfo = document.getElementById('proveedor_info');
-    const descripcionField = document.getElementById('descripcion');
-
-    if (!facturaId) {
-        // Si no hay factura seleccionada, mostrar descripción y habilitar el monto
-        descripcionGroup.style.display = 'block';
-        descripcionField.required = true;
-        montoInput.readOnly = false;
-
-        // Limpiar los detalles y proveedor
-        detallesTableBody.innerHTML = '';
-        montoInput.value = '';
-        proveedorInfo.innerHTML = '<strong>Sin proveedor</strong><br>';
-        detallesContainer.style.display = 'none';
-        return;
-    }
-
-    // Si hay factura seleccionada, ocultar descripción y deshabilitar el monto
-    descripcionGroup.style.display = 'none';
-    descripcionField.required = false;
-    montoInput.readOnly = true;
 
     // Obtener detalles de la factura desde el servidor
     fetch(`/api/pagos/${facturaId}/detalles`)
@@ -216,7 +121,7 @@ function loadInvoiceDetails() {
             console.error('Error al cargar los detalles de la factura:', error);
             detallesContainer.style.display = 'none'; // Ocultar en caso de error
         });
-}
+
 
 
 

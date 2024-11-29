@@ -4,11 +4,31 @@
 <div class="container">
     <h1>Pagos</h1>
     <a href="{{ route('pagos.create') }}" class="btn btn-primary">Registrar Pago</a>
-    <table class="table">
+
+    <!-- Buscador y Filtro -->
+    <div class="row my-4">
+        <div class="col-md-6">
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="form-control" 
+                placeholder="Buscar por factura, método de pago, monto o descripción..."
+            >
+        </div>
+        <div class="col-md-6">
+            <select id="filterEstado" class="form-control">
+                <option value="">Todos los Estados</option>
+                <option value="pagado">Pagado</option>
+                <option value="pendiente">Pendiente</option>
+            </select>
+        </div>
+    </div>
+
+    <table class="table" id="pagosTable">
         <thead>
             <tr>
                 <th>N°</th>
-                <th>Factura</th>
+                
                 <th>Método de Pago</th>
                 <th>Monto</th>
                 <th>Fecha de Pago</th>
@@ -21,7 +41,7 @@
             @foreach ($pagos as $pago)
             <tr>
                 <td>{{ $pago->id }}</td>
-                <td>{{ $pago->factura->numero_factura }}</td>
+                
                 <td>{{ $pago->metodoPago ? $pago->metodoPago->nombre : 'N/A' }}</td>
                 <td>${{ number_format($pago->monto, 0) }}</td>
                 <td>{{ \Carbon\Carbon::parse($pago->fecha_pago)->format('d/m/Y') }}</td>
@@ -37,14 +57,14 @@
                         <i class="fa fa-fw fa-eye"></i>
                     </a>
                     
-                    <!-- Condicional para Deshabilitar el Botón de Editar si el estado es "pagado" -->
+                    <!-- Botón para Completar Pago si está pendiente -->
                     @if ($pago->estado_pago == 'pendiente')
-                        <a href="{{ route('pagos.edit', $pago) }}" class="btn btn-sm btn-success">
-                            <i class="fa fa-fw fa-edit"></i>
+                        <a href="{{ route('pagos.edit', $pago->id) }}" class="btn btn-sm btn-success">
+                        <i class="fa fa-fw fa-check"></i>
                         </a>
                     @else
                         <button type="button" class="btn btn-sm btn-secondary" onclick="showEditAlert()">
-                            <i class="fa fa-fw fa-edit"></i>
+                            <i class="fa fa-fw fa-check"></i> 
                         </button>
                     @endif
 
@@ -88,6 +108,41 @@
             confirmButtonColor: '#d33'
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('searchInput');
+        const filterEstado = document.getElementById('filterEstado');
+        const table = document.getElementById('pagosTable');
+        const rows = Array.from(table.getElementsByTagName('tbody')[0].getElementsByTagName('tr'));
+
+        function filterTable() {
+            const searchText = searchInput.value.toLowerCase();
+            const estadoFiltro = filterEstado.value;
+
+            rows.forEach(row => {
+                const cells = row.getElementsByTagName('td');
+                const factura = cells[1].textContent.toLowerCase();
+                const metodo = cells[2].textContent.toLowerCase();
+                const monto = cells[3].textContent.toLowerCase();
+                const estado = cells[6].textContent.toLowerCase();
+                const descripcion = cells[7]?.textContent?.toLowerCase() || '';
+
+                // Verificar si la fila coincide con el texto de búsqueda y el estado
+                const matchesSearch = factura.includes(searchText) || metodo.includes(searchText) || monto.includes(searchText) || descripcion.includes(searchText);
+                const matchesEstado = estadoFiltro === '' || estado.includes(estadoFiltro);
+
+                if (matchesSearch && matchesEstado) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Agregar eventos a los campos de búsqueda y filtro
+        searchInput.addEventListener('input', filterTable);
+        filterEstado.addEventListener('change', filterTable);
+    });
 </script>
 @endsection
 

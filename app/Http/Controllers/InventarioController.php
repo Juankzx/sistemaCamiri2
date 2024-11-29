@@ -356,7 +356,7 @@ public function transferirMasivo()
         $request->validate([
             'sucursal_id' => 'required|exists:sucursales,id',
             'cantidad' => 'required|array',
-            'cantidad.*' => 'numeric|min:1', // Cada cantidad debe ser numérica y al menos 1
+            'cantidad.*' => 'numeric|min:0', // Cada cantidad debe ser numérica y al menos 1
         ]);
     
         $sucursalDestinoId = $request->input('sucursal_id');

@@ -34,7 +34,8 @@
         },
         
         "files": [
-        "app/Helpers/MenuHelper.php"
+        "app/Helpers/MenuHelper.php",
+        "app/Helpers/FormatHelper.php"
     ]
     },
     "autoload-dev": {

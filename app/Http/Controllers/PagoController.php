@@ -9,11 +9,21 @@ use App\Models\DetalleOrdenCompra;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Helpers\FormatHelper;
+use App\Services\EstadoService;
+use App\Services\InventarioService;
 
 class PagoController extends Controller
 {
-    public function __construct()
+    protected $estadoService;
+    protected $inventarioService;
+
+    public function __construct(EstadoService $estadoService, InventarioService $inventarioService)
 {
+    $this->estadoService = $estadoService;
+    $this->inventarioService = $inventarioService;
+
+
     $this->middleware(function ($request, $next) {
         if (auth()->check() && auth()->user()->hasRole('vendedor')) {
             abort(403, 'No tienes permiso para acceder a esta página.');
@@ -40,84 +50,90 @@ class PagoController extends Controller
     }
 
     public function store(Request $request)
-{
-    Log::info('Inicio del método store');
-
-    // Validación de los datos
-    try {
-        Log::info('Datos recibidos para validación', $request->all());
-        $validatedData = $request->validate([
-            'factura_id' => 'nullable|exists:facturas,id',
-            'metodo_pago_id' => 'required|exists:metodos_pagos,id',
-            'monto' => 'required|numeric|min:0.01',
-            'fecha_pago' => 'required|date',
-            'descripcion' => 'nullable|string|max:255',
-            'estado_pago' => 'required|in:pendiente,pagado',
-            'numero_transferencia' => 'nullable|string|max:255'
-        ]);
-        Log::info('Datos validados correctamente', $validatedData);
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        Log::error('Error en la validación', ['errors' => $e->errors()]);
-        return redirect()->back()->withErrors($e->errors())->withInput();
-    }
-
-    DB::beginTransaction();
-
-    try {
-        Log::info('Iniciando la creación del pago');
-        $pago = Pago::create($validatedData);
-        Log::info('Pago creado', ['pago' => $pago]);
-
-        // Si existe una factura asociada, procesar su estado
-        if (!empty($validatedData['factura_id'])) {
-            Log::info('Procesando factura asociada', ['factura_id' => $validatedData['factura_id']]);
-            $factura = Factura::find($validatedData['factura_id']);
-            
-            if (!$factura) {
-                throw new \Exception('Factura no encontrada');
-            }
-
-            Log::info('Factura encontrada', ['factura' => $factura]);
-
-            // Actualizar monto pagado y estado
-            $montoPagado = $factura->pagos()->sum('monto');
-            Log::info('Monto total pagado a la factura', ['monto_pagado' => $montoPagado]);
-
-            if ($montoPagado >= $factura->monto_total) {
-                $factura->update(['estado_pago' => 'pagado']);
-                Log::info('Estado de la factura actualizado a pagado', ['factura_id' => $factura->id]);
-            }
-
-            // Verificar y actualizar estado de la orden de compra y guías de despacho si es necesario
-            $guiaDespacho = $factura->guiaDespacho;
-            if ($guiaDespacho && $guiaDespacho->ordenCompra) {
-                $ordenCompra = $guiaDespacho->ordenCompra;
-                $todasFacturasPagadas = $ordenCompra->facturas->every(function ($factura) {
-                    return $factura->estado_pago === 'pagado';
-                });
-
-                Log::info('Todas las facturas de la orden están pagadas', ['estado' => $todasFacturasPagadas]);
-
-                if ($todasFacturasPagadas) {
-                    $ordenCompra->update(['estado' => 'entregado']);
-                    $ordenCompra->guiasDespacho()->update(['estado' => 'entregada']);
-                    Log::info('Orden y guías de despacho actualizadas');
-                }
-            }
-        } else {
-            Log::info('No se proporcionó factura, registrando pago sin factura');
+    {
+        Log::info('Inicio del método store');
+    
+        // Validación de los datos
+        try {
+            Log::info('Datos recibidos para validación', $request->all());
+            $validatedData = $request->validate([
+                'factura_id' => 'nullable|exists:facturas,id',
+                'metodo_pago_id' => 'required|exists:metodos_pagos,id',
+                'monto' => 'required|numeric|min:0.01',
+                'fecha_pago' => 'required|date',
+                'descripcion' => 'nullable|string|max:255',
+                'estado_pago' => 'required|in:pendiente,pagado',
+                'numero_transferencia' => 'nullable|string|max:255'
+            ]);
+            Log::info('Datos validados correctamente', $validatedData);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Error en la validación', ['errors' => $e->errors()]);
+            return redirect()->back()->withErrors($e->errors())->withInput();
         }
-
-        DB::commit();
-        Log::info('Transacción completada con éxito');
-        return redirect()->route('pagos.index')->with('success', 'Pago registrado y estado actualizado correctamente.');
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error('Error al registrar el pago', ['exception' => $e->getMessage()]);
-        return redirect()->back()->with('error', 'Error al registrar el pago: ' . $e->getMessage());
+    
+        DB::beginTransaction();
+    
+        try {
+            Log::info('Iniciando la creación del pago');
+            $pago = Pago::create($validatedData);
+            Log::info('Pago creado', ['pago' => $pago]);
+    
+            // Si existe una factura asociada, procesar su estado
+            if (!empty($validatedData['factura_id'])) {
+                Log::info('Procesando factura asociada', ['factura_id' => $validatedData['factura_id']]);
+                $factura = Factura::find($validatedData['factura_id']);
+    
+                if (!$factura) {
+                    throw new \Exception('Factura no encontrada');
+                }
+    
+                Log::info('Factura encontrada', ['factura' => $factura]);
+    
+                // Usar el EstadoService para actualizar el estado de la factura
+                $this->estadoService->actualizarEstadoFactura($factura, 'pagado');
+                Log::info('Estado de la factura actualizado a pagado', ['factura_id' => $factura->id]);
+    
+                // Si la factura tiene una guía de despacho asociada, actualizar sus estados
+                if ($factura->guiaDespacho) {
+                    $this->estadoService->actualizarEstadoGuia($factura->guiaDespacho, 'entregada');
+                    Log::info('Estado de la guía de despacho actualizado a entregada', ['guia_id' => $factura->guiaDespacho->id]);
+    
+                    // Si la guía tiene una orden de compra asociada, verificar el estado
+                    if ($factura->guiaDespacho->ordenCompra) {
+                        $ordenCompra = $factura->guiaDespacho->ordenCompra;
+    
+                        // Verificar si todas las facturas están pagadas
+                        $todasFacturasPagadas = $ordenCompra->facturas->every(function ($factura) {
+                            return $factura->estado_pago === 'pagado';
+                        });
+    
+                        Log::info('Todas las facturas de la orden están pagadas', ['estado' => $todasFacturasPagadas]);
+    
+                        if ($todasFacturasPagadas) {
+                            // Actualizar el estado de la orden de compra
+                            $this->estadoService->actualizarEstadoOrden($ordenCompra, 'entregado');
+                            Log::info('Estado de la orden de compra actualizado a entregado', ['orden_id' => $ordenCompra->id]);
+    
+                            // Agregar productos al inventario usando el InventarioService
+                            $this->inventarioService->agregarInventarioDesdeOrden($ordenCompra);
+                            Log::info('Inventario actualizado con los productos de la orden de compra', ['orden_id' => $ordenCompra->id]);
+                        }
+                    }
+                }
+            } else {
+                Log::info('No se proporcionó factura, registrando pago sin factura');
+            }
+    
+            DB::commit();
+            Log::info('Transacción completada con éxito');
+            return redirect()->route('pagos.index')->with('success', 'Pago registrado y estado actualizado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al registrar el pago', ['exception' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Error al registrar el pago: ' . $e->getMessage());
+        }
     }
-}
-
+    
     
 public function show(Pago $pago)
 {
@@ -158,39 +174,103 @@ return view('pagos.show', compact('pago', 'detalles', 'totalNeto', 'iva', 'total
 }
 
 
-public function edit(Pago $pago)
+public function edit($id)
 {
-    // Verificar que el estado del pago sea "pendiente"
-    if ($pago->estado_pago !== 'pendiente') {
-        return redirect()->route('pagos.index')->with('error', 'Solo se pueden editar pagos con estado pendiente.');
-    }
+    $pago = Pago::findOrFail($id);
+    
+    // Usar formato para la vista sin modificar el objeto original
+    $formatter = new \NumberFormatter('es_CL', \NumberFormatter::CURRENCY);
+    $formattedMonto = $formatter->formatCurrency($pago->monto, 'CLP');
 
-    // Mensaje adicional si no tiene factura asociada
-    $mensaje = is_null($pago->factura_id) 
-        ? 'Este pago no tiene factura asociada. Por favor, asegúrate de incluir una descripción detallada.' 
-        : null;
+    $metodoPago = MetodosPago::all();
 
-    return view('pagos.edit', compact('pago', 'mensaje'));
+    return view('pagos.edit', compact('pago', 'metodoPago', 'formattedMonto'));
 }
 
-public function update(Request $request, Pago $pago)
+
+public function update(Request $request, $id)
 {
-    // Validar datos
-    $rules = [
+    $pago = Pago::findOrFail($id);
+    Log::info('Actualización de pago iniciada', ['id' => $id, 'request' => $request->all()]);
+
+    // Validar datos del formulario
+    $validatedData = $request->validate([
         'metodo_pago_id' => 'required|exists:metodos_pagos,id',
         'fecha_pago' => 'required|date',
         'monto' => 'required|numeric|min:0',
-        'descripcion' => is_null($pago->factura_id) ? 'required|string|max:255' : 'nullable|string|max:255',
-        
-    ];
+        'numero_transferencia' => 'nullable|string|max:255',
+        'descripcion' => 'nullable|string|max:255',
+    ]);
 
-    $validatedData = $request->validate($rules);
+    DB::beginTransaction();
 
-    // Actualizar el pago
-    $pago->update($validatedData);
+    try {
+        // Actualizar datos del pago
+        $pago->update([
+            'metodo_pago_id' => $validatedData['metodo_pago_id'],
+            'fecha_pago' => $validatedData['fecha_pago'],
+            'numero_transferencia' => $validatedData['numero_transferencia'],
+            'descripcion' => $validatedData['descripcion'],
+            'monto' => filter_var($validatedData['monto'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION),
+            'estado_pago' => $validatedData['monto'] > 0 ? 'pagado' : $pago->estado_pago,
+        ]);
 
-    return redirect()->route('pagos.index')->with('success', 'El pago se ha actualizado correctamente.');
+        Log::info('Pago actualizado correctamente', ['pago' => $pago]);
+
+        // Verificar si el pago tiene una factura asociada
+        if ($pago->factura) {
+            $factura = $pago->factura;
+
+            // Actualizar el estado de la factura basado en los pagos asociados
+            $montoPagado = $factura->pagos()->sum('monto');
+            Log::info('Monto total pagado a la factura', ['monto_pagado' => $montoPagado]);
+
+            if ($montoPagado >= $factura->monto_total) {
+                $factura->update(['estado_pago' => 'pagado']);
+                Log::info('Estado de la factura actualizado a pagado', ['factura_id' => $factura->id]);
+
+                // Actualizar la guía de despacho asociada si corresponde
+                if ($factura->guiaDespacho) {
+                    $factura->guiaDespacho->update(['estado' => 'entregada']);
+                    Log::info('Estado de la guía de despacho actualizado a entregada', ['guia_id' => $factura->guiaDespacho->id]);
+
+                    // Si la guía no tiene una orden de compra asociada, agregar directamente al inventario
+                    if (!$factura->guiaDespacho->ordenCompra) {
+                        $this->inventarioService->agregarInventarioDesdeGuia($factura->guiaDespacho);
+                        Log::info('Inventario actualizado desde la guía de despacho (sin orden de compra)', ['guia_id' => $factura->guiaDespacho->id]);
+                    } else {
+                        // Actualizar el estado de la orden de compra si corresponde
+                        $ordenCompra = $factura->guiaDespacho->ordenCompra;
+                        if ($ordenCompra) {
+                            $todasFacturasPagadas = $ordenCompra->facturas->every(function ($factura) {
+                                return $factura->estado_pago === 'pagado';
+                            });
+
+                            if ($todasFacturasPagadas) {
+                                $ordenCompra->update(['estado' => 'entregado']);
+                                Log::info('Estado de la orden de compra actualizado a entregado', ['orden_id' => $ordenCompra->id]);
+
+                                // Agregar inventario desde la guía de despacho
+                                $this->inventarioService->agregarInventarioDesdeGuia($factura->guiaDespacho);
+                                Log::info('Inventario actualizado desde la guía de despacho', ['guia_id' => $factura->guiaDespacho->id]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        DB::commit();
+
+        return redirect()->route('pagos.index')->with('success', 'Pago actualizado y estados relacionados procesados correctamente.');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error al actualizar el pago', ['exception' => $e->getMessage()]);
+        return redirect()->back()->with('error', 'Error al actualizar el pago: ' . $e->getMessage());
+    }
 }
+
+
 
     public function destroy(Pago $pago)
     {

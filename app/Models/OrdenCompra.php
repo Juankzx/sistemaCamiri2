@@ -56,16 +56,7 @@ class OrdenCompra extends Model
      * @param string $nuevoEstado
      * @throws \Exception
      */
-    public function actualizarEstado(string $nuevoEstado)
-    {
-        $estadosPermitidos = ['solicitado', 'en_transito', 'entregado', 'cancelado'];
-        if (in_array($nuevoEstado, $estadosPermitidos)) {
-            $this->estado = $nuevoEstado;
-            $this->save();
-        } else {
-            throw new \Exception("Estado no permitido");
-        }
-    }
+  
 
     /**
      * Calcula el total de la orden de compra en función de los detalles (productos solicitados).
@@ -94,4 +85,14 @@ class OrdenCompra extends Model
     {
         return $this->estado === 'entregado';
     }
+
+    public function productos()
+    {
+    return $this->hasMany(Producto::class, 'categoria_id');
+    }
+    public function categoria()
+{
+    return $this->belongsTo(Categoria::class, 'categoria_id');
+}
+
 }

@@ -11,20 +11,40 @@ use App\Models\Inventario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use App\Services\EstadoService;
+use App\Services\InventarioService;
+
 
 class GuiaDespachoController extends Controller
 {
-    public function __construct()
+    protected $estadoService;
+    protected $inventarioService;
+
+    public function __construct(EstadoService $estadoService, InventarioService $inventarioService)
+    {
+        $this->middleware(function ($request, $next) {
+            if (auth()->check() && auth()->user()->hasRole('vendedor')) {
+                abort(403, 'No tienes permiso para acceder a esta página.');
+            }
+            return $next($request);
+        });
+
+        $this->estadoService = $estadoService;
+        $this->inventarioService = $inventarioService;
+    }
+
+    public function actualizarEstado($id, Request $request)
 {
-    $this->middleware(function ($request, $next) {
-        if (auth()->check() && auth()->user()->hasRole('vendedor')) {
-            abort(403, 'No tienes permiso para acceder a esta página.');
-        }
-        return $next($request);
-    });
+    $guia = GuiaDespacho::findOrFail($id);
+    $nuevoEstado = $request->input('estado');
+
+    $this->estadoService->actualizarEstadoGuia($guia, $nuevoEstado);
+
+    return redirect()->back()->with('success', 'Estado de Guía de Despacho actualizado correctamente.');
 }
 
-
+    
+    
     public function index()
     {
         $guias = GuiaDespacho::with('ordenCompra.proveedor')
@@ -52,93 +72,86 @@ class GuiaDespachoController extends Controller
 
     public function store(Request $request)
 {
-    
-    
-        \Log::info('Iniciando creación de Guía de Despacho.');
-        \Log::info('Datos recibidos:', $request->all());
+    \Log::info('Iniciando creación de Guía de Despacho.');
+    \Log::info('Datos recibidos:', $request->all());
 
-        // Validar los datos
-        try {
-            $validatedData = $request->validate([
-                'numero_guia' => 'required|string|max:255|unique:guias_despacho,numero_guia',
-                'fecha_entrega' => 'required|date',
-                'orden_compra_id' => 'nullable|exists:ordenes_compras,id',
-                'detalles' => 'required|array|min:1',
-                'detalles.*.producto_id' => 'required|exists:productos,id',
-                'detalles.*.cantidad_entregada' => 'required|integer|min:1',
-                'detalles.*.precio_compra' => 'required|numeric|min:0',
-            ]);
-            \Log::info('Datos validados correctamente.', $validatedData);
-        } catch (\Exception $e) {
-            \Log::error('Error en validación: ' . $e->getMessage());
-            return redirect()->back()->withErrors(['error' => 'Error en validación: ' . $e->getMessage()]);
-        }
-
-        // Guardar los datos
-        try {
-            DB::beginTransaction();
-            \Log::info('Transacción iniciada.');
-
-            $guiaDespacho = GuiaDespacho::create([
-                'numero_guia' => $validatedData['numero_guia'],
-                'fecha_entrega' => $validatedData['fecha_entrega'],
-                'orden_compra_id' => $validatedData['orden_compra_id'] ?? null,
-                'estado' => 'emitida',
-            ]);
-            \Log::info('Guía de Despacho creada.', $guiaDespacho->toArray());
-
-            $total = 0;
-
-            foreach ($request->detalles as $detalle) {
-                // Validar cada detalle manualmente si es necesario
-                if (empty($detalle['producto_id']) || empty($detalle['cantidad_entregada']) || empty($detalle['precio_compra'])) {
-                    throw new \Exception("Faltan detalles para un producto en la guía.");
-                }
-
-                $subtotal = $detalle['cantidad_entregada'] * $detalle['precio_compra'];
-                $total += $subtotal;
-
-                DetalleGuiaDespacho::create([
-                    'guia_despacho_id' => $guiaDespacho->id,
-                    'producto_id' => $detalle['producto_id'],
-                    'cantidad_entregada' => $detalle['cantidad_entregada'],
-                    'precio_compra' => $detalle['precio_compra'],
-                    'subtotal' => $subtotal,
-                ]);
-
-                // Actualizar inventario
-                Inventario::addStock($detalle['producto_id'], $detalle['cantidad_entregada'], 1);
-
-                // Crear movimiento
-                Movimiento::create([
-                    'producto_id' => $detalle['producto_id'],
-                    'bodega_id' => 1,
-                    'sucursal_id' => null,
-                    'tipo' => 'compra',
-                    'cantidad' => $detalle['cantidad_entregada'],
-                    'fecha' => now(),
-                    'user_id' => auth()->id(),
-                ]);
-            }
-
-            $guiaDespacho->update(['total' => $total]);
-            \Log::info('Total actualizado: ' . $total);
-
-            if ($guiaDespacho->ordenCompra && $guiaDespacho->ordenCompra->estado === 'solicitado') {
-                $guiaDespacho->ordenCompra->update(['estado' => 'en_transito']);
-                \Log::info('Estado de Orden de Compra actualizado a en_transito.');
-            }
-
-            DB::commit();
-            \Log::info('Transacción completada con éxito.');
-
-            return redirect()->route('guias-despacho.index')->with('success', 'Guía de despacho creada con éxito.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error al crear la Guía de Despacho: ' . $e->getMessage());
-            return redirect()->back()->withErrors(['error' => 'Error al crear la Guía de Despacho: ' . $e->getMessage()]);
-        }
+    // Validar los datos
+    try {
+        $validatedData = $request->validate([
+            'numero_guia' => 'required|string|max:255|unique:guias_despacho,numero_guia',
+            'fecha_entrega' => 'required|date',
+            'orden_compra_id' => 'nullable|exists:ordenes_compras,id',
+            'detalles' => 'required|array|min:1',
+            'detalles.*.producto_id' => 'required|exists:productos,id',
+            'detalles.*.cantidad_entregada' => 'required|integer|min:1',
+            'detalles.*.precio_compra' => 'required|integer|min:0',
+        ]);
+        \Log::info('Datos validados correctamente.', $validatedData);
+    } catch (\Exception $e) {
+        \Log::error('Error en validación: ' . $e->getMessage());
+        return redirect()->back()->withErrors(['error' => 'Error en validación: ' . $e->getMessage()]);
     }
+
+    // Guardar los datos
+    try {
+        DB::beginTransaction();
+        \Log::info('Transacción iniciada.');
+
+        $guiaDespacho = GuiaDespacho::create([
+            'numero_guia' => $validatedData['numero_guia'],
+            'fecha_entrega' => $validatedData['fecha_entrega'],
+            'orden_compra_id' => $validatedData['orden_compra_id'] ?? null,
+            'estado' => 'emitida',
+        ]);
+        \Log::info('Guía de Despacho creada.', $guiaDespacho->toArray());
+
+        $total = 0;
+
+        foreach ($validatedData['detalles'] as $detalle) {
+            $subtotal = $detalle['cantidad_entregada'] * $detalle['precio_compra'];
+            $total += $subtotal; // Sumar el subtotal al total acumulado
+
+            DetalleGuiaDespacho::create([
+                'guia_despacho_id' => $guiaDespacho->id,
+                'producto_id' => $detalle['producto_id'],
+                'cantidad_entregada' => $detalle['cantidad_entregada'],
+                'precio_compra' => $detalle['precio_compra'],
+                'subtotal' => $subtotal,
+            ]);
+
+            // Crear movimiento
+            Movimiento::create([
+                'producto_id' => $detalle['producto_id'],
+                'bodega_id' => 1, // Cambiar según tu lógica de bodega
+                'sucursal_id' => null,
+                'tipo' => 'compra',
+                'cantidad' => $detalle['cantidad_entregada'],
+                'fecha' => now(),
+                'user_id' => auth()->id(),
+            ]);
+        }
+
+        // Actualizar el total en la guía de despacho
+        $guiaDespacho->update(['total' => $total]);
+        \Log::info('Total final calculado y actualizado.', ['total' => $total]);
+
+        // Actualizar el estado de la orden de compra si está en "solicitado"
+        if ($guiaDespacho->ordenCompra && $guiaDespacho->ordenCompra->estado === 'solicitado') {
+            $guiaDespacho->ordenCompra->update(['estado' => 'en_transito']);
+            \Log::info('Estado de Orden de Compra actualizado a en_transito.');
+        }
+
+        DB::commit();
+        \Log::info('Transacción completada con éxito.');
+
+        return redirect()->route('guias-despacho.index')->with('success', 'Guía de despacho creada con éxito.');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error al crear la Guía de Despacho: ' . $e->getMessage());
+        return redirect()->back()->withErrors(['error' => 'Error al crear la Guía de Despacho: ' . $e->getMessage()]);
+    }
+}
+
 
 public function getOrdenCompraDetails($id)
 {
@@ -293,9 +306,5 @@ public function update(Request $request, $id)
         return redirect()->back()->with('error', 'Error al actualizar la guía de despacho: ' . $e->getMessage());
     }
 }
-
-
-
-
 
 }
