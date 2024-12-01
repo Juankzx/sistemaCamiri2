@@ -97,14 +97,19 @@
                         <label>Total Neto:</label>
                         <input type="text" id="totalConIva" class="form-control bg-light" readonly>
                     </div>
-                    <button type="button" class="btn btn-primary w-100" onclick="submitForm()">
+                    <button type="button" class="btn btn-primary w-100 mb-3" onclick="submitForm()">
                         <i class="fas fa-shopping-cart"></i> Finalizar Venta
+                    </button>
+                    <!-- Botón Volver -->
+                    <button type="button" class="btn btn-secondary w-100" onclick="window.history.back()">
+                        <i class="fas fa-arrow-left"></i> Volver
                     </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 
 
 <!-- Modales -->
@@ -253,24 +258,26 @@
 
     // Función para mostrar productos
     function displayProducts(products) {
-        const table = document.getElementById('productTable');
-        table.innerHTML = '';
-        products.forEach(product => {
-            const productRow = `
-                <tr>
-                    <td>${product.nombre} - ${product.unidad_medida.abreviatura}</td>
-                    <td>$${product.precioventa.toFixed(0)}</td>
-                    <td>${product.inventarios.length > 0 ? product.inventarios[0].cantidad : 'N/A'}</td>
-                    <td>
-                        <button type="button" 
-                                onclick="addProductToCart(${product.id}, '${product.nombre}', ${product.precioventa}, ${product.inventarios.length > 0 ? product.inventarios[0].cantidad : 0}, ${product.inventarios.length > 0 ? product.inventarios[0].id : 0}, '${product.unidad_medida}')" 
-                                class="btn btn-primary">Agregar</button>
-                    </td>
-                </tr>
-            `;
-            table.innerHTML += productRow;
-        });
-    }
+    const table = document.getElementById('productTable');
+    table.innerHTML = '';
+    products.forEach(product => {
+        const unidad = product.unidad_medida ? product.unidad_medida.abreviatura : 'N/A';
+        const productRow = `
+            <tr>
+                <td>${product.nombre} - ${unidad}</td>
+                <td>$${product.precioventa.toFixed(0)}</td>
+                <td>${product.inventarios.length > 0 ? product.inventarios[0].cantidad : 'N/A'}</td>
+                <td>
+                    <button type="button" 
+                            onclick="addProductToCart(${product.id}, '${product.nombre}', ${product.precioventa}, ${product.inventarios.length > 0 ? product.inventarios[0].cantidad : 0}, ${product.inventarios.length > 0 ? product.inventarios[0].id : 0}, '${unidad}')" 
+                            class="btn btn-primary">Agregar</button>
+                </td>
+            </tr>
+        `;
+        table.innerHTML += productRow;
+    });
+}
+
 
     // Ejecutar displayProducts() automáticamente al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
@@ -306,8 +313,11 @@ function addProductToCart(productId, productName, productPrice, productQuantity,
 function updateCartDisplay() {
     const cartElement = document.getElementById('cart');
     cartElement.innerHTML = '';
+
     cart.forEach((item, index) => {
-        const quantityValue = item.unit === 'KG' ? item.quantity.toFixed(2) : item.quantity; // Mostrar decimales si es kg
+        const quantityValue = item.unit === 'KG' ? item.quantity.toFixed(2) : item.quantity; // Mostrar decimales si es KG
+        const readonly = item.unit === 'UND' ? 'readonly' : ''; // Definir readonly para productos con unidad UND
+        
         const itemElement = `
             <div class="cart-item d-flex align-items-center justify-content-between mb-2">
                 <input type="hidden" name="detalles[${index}][producto_id]" value="${item.id}">
@@ -317,11 +327,17 @@ function updateCartDisplay() {
                 <div>${item.name}</div>
                 <div class="input-group input-group-sm quantity-adjuster">
                     <div class="input-group-prepend">
-                        <button class="btn btn-decrement btn-outline-secondary" type="button" onclick="adjustQuantity(${item.id}, ${item.unit === 'kg' ? -0.1 : -1})">-</button>
+                        <button class="btn btn-decrement btn-outline-secondary" type="button" onclick="adjustQuantity(${item.id}, ${item.unit === 'KG' ? -0.1 : -1})">-</button>
                     </div>
-                    <input type="text" class="form-control text-center" value="${quantityValue}" min="${item.unit === 'kg' ? 0.1 : 1}" onchange="inputQuantity(${item.id}, this.value)">
+                    <input 
+                        type="text" 
+                        class="form-control text-center" 
+                        value="${quantityValue}" 
+                        min="${item.unit === 'KG' ? 0.1 : 1}" 
+                        ${readonly} 
+                        onchange="inputQuantity(${item.id}, this.value)">
                     <div class="input-group-append">
-                        <button class="btn btn-increment btn-outline-secondary" type="button" onclick="adjustQuantity(${item.id}, ${item.unit === 'kg' ? 0.1 : 1})">+</button>
+                        <button class="btn btn-increment btn-outline-secondary" type="button" onclick="adjustQuantity(${item.id}, ${item.unit === 'KG' ? 0.1 : 1})">+</button>
                     </div>
                 </div>
                 <div>$${(item.quantity * item.price).toFixed(0)}</div>
@@ -334,12 +350,15 @@ function updateCartDisplay() {
 }
 
 
+
 function adjustQuantity(productId, change) {
     const item = cart.find(item => item.id === productId);
     if (!item) return;
 
+    // Verifica si la unidad es KG o UND para ajustar la cantidad
     const nuevaCantidad = item.unit === 'KG' ? Math.max(0.1, item.quantity + change) : Math.max(1, item.quantity + change);
 
+    // Verifica si la nueva cantidad es mayor al inventario disponible
     if (nuevaCantidad > item.inventory) {
         Swal.fire({
             icon: 'warning',
@@ -352,6 +371,7 @@ function adjustQuantity(productId, change) {
         updateCartDisplay();
     }
 }
+
 // Alerta para mostrar si se inicia caja con éxito
 @if(session('success'))
     document.addEventListener('DOMContentLoaded', function() {
@@ -364,16 +384,28 @@ function adjustQuantity(productId, change) {
     });
     @endif
 
-function inputQuantity(productId, value) {
+    function inputQuantity(productId, value) {
     const item = cart.find(item => item.id === productId);
     if (!item) return;
 
-    let parsedValue = item.unit === 'KG' ? parseFloat(value) : parseInt(value);
-    parsedValue = isNaN(parsedValue) ? (item.unit === 'KG' ? 0.1 : 1) : parsedValue; // Si no es válido, asignar valor mínimo
+    if (item.unit === 'UND') {
+        // No permitir edición manual para productos en unidades
+        Swal.fire({
+            icon: 'error',
+            title: 'Edición No Permitida',
+            text: 'No puedes editar manualmente la cantidad de productos por unidad. Usa los botones + y -.',
+        });
+        updateCartDisplay(); // Restablecer el valor original
+        return;
+    }
 
-    item.quantity = Math.max(item.unit === 'KG' ? 0.1 : 1, parsedValue);
+    // Permitir edición manual sólo para productos con unidad KG
+    let parsedValue = parseFloat(value);
+    parsedValue = isNaN(parsedValue) ? 0.1 : parsedValue; // Si no es válido, asignar valor mínimo
+    item.quantity = Math.max(0.1, parsedValue);
     updateCartDisplay();
 }
+
 
 
 function removeFromCart(productId) {

@@ -72,6 +72,7 @@ public function create()
     // Obtener el usuario autenticado
     $user = auth()->user();
     
+    
     // Obtener todos los métodos de pago y sucursales
     $metodosPago = MetodosPago::all();
     $sucursales = Sucursale::all();
@@ -239,10 +240,6 @@ public function store(Request $request)
         ], 500);
     }
 }
-
-
-
-
 
     public function show(Venta $venta)
     {
