@@ -5,10 +5,10 @@
         /* Estilos específicos para impresoras de 80 mm */
         body {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 14px; /* Tamaño de fuente ajustado para impresoras térmicas */
+            font-size: 14px;
             margin: 0;
             padding: 0;
-            width: 80mm; /* Ancho ajustado para impresoras de 80mm */
+            width: 80mm;
             max-width: 80mm;
         }
         .container {
@@ -65,9 +65,10 @@
         <div class="title">Boleta de Venta</div>
         <div class="details">
             <p>N° Venta: {{ $venta->id }}</p>
-            <p>Sucursal: {{ $venta->sucursal->nombre }}</p>
+            <p>Sucursal: {{ $venta->sucursal->nombre }} - {{ $venta->sucursal->direccion }}</p>
             <p>Vendedor: {{ $venta->user->name }}</p>
             <p>Fecha: {{ \Carbon\Carbon::parse($venta->fecha)->format('d/m/Y H:i:s') }}</p>
+            <p>Método de Pago: {{ $venta->metodo_pago->nombre }}</p>
         </div>
 
         <div class="items">
@@ -82,6 +83,13 @@
             <p>IVA (19%): ${{ number_format($venta->total - ($venta->total / 1.19), 0) }}</p>
             <p><strong>Total: ${{ number_format($venta->total, 0) }}</strong></p>
         </div>
+
+        @if($venta->metodo_pago_id == 1) <!-- 1 representa "Efectivo" -->
+        <div class="payments">
+            <p><strong>Monto Recibido:</strong> ${{ number_format($venta->monto_recibido, 0) }}</p>
+            <p><strong>Vuelto:</strong> ${{ number_format($venta->monto_recibido - $venta->total, 0) }}</p>
+        </div>
+        @endif
 
         <div class="qr-code">
             <img src="{{ $qrCodeDataUri }}" alt="QR Code">

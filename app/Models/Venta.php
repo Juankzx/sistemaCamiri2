@@ -40,7 +40,9 @@ class Venta extends Model
         'sucursal_id', 
         'metodo_pago_id', 
         'fecha', 
-        'total'];
+        'total',
+        'monto_recibido',
+        'vuelto'];
 
 
     protected $dates = [

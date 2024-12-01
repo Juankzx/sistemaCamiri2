@@ -163,8 +163,8 @@ class CajaController extends Controller
     // Calcular los gastos de caja (esto es opcional, puedes asignar un valor si no usas esta funcionalidad)
     $totalGastos = 0; // Puedes calcular esto si tienes una tabla de gastos
 
-    // Calcular el balance final
-    $balanceFinal = $caja->monto_apertura + $totalVentas - $totalGastos;
+    // Balance final basado solo en efectivo
+    $balanceFinal = $caja->monto_apertura + $totalEfectivo;
 
     // Total de ventas realizadas en todas las formas de pago
     $totalVentasRealizadas = $ventasEfectivo + $ventasTarjeta + $ventasAmipass;

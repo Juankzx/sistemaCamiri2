@@ -8,14 +8,12 @@
 
 @section('content')
 <div class="container">
-    <!-- Mostrar mensaje si no hay caja abierta -->
     @if(isset($mensaje) && !empty($mensaje))
         <div class="alert alert-warning text-center">
             <strong>{{ $mensaje }}</strong>
         </div>
     @endif
     <div class="row">
-        <!-- Información básica de la venta -->
         <div class="col-md-8 mb-3">
             <form action="{{ route('ventas.store') }}" method="POST" id="ventaForm">
                 @csrf
@@ -24,15 +22,14 @@
                         <h5 class="mb-3">Detalles de la Venta</h5>
                         <input type="hidden" name="user_id" value="{{ auth()->user()->id }}">
                         
-                        <!-- Mostrar la sucursal activa de la caja abierta -->
                         <div class="form-group mb-3">
-                            <label for="sucursal_id" class="form-label">Sucursal Activa</label>
+                            <label for="sucursal_id">Sucursal Activa</label>
                             <input type="text" class="form-control" value="{{ $sucursalActiva->nombre }}" readonly>
                             <input type="hidden" name="sucursal_id" value="{{ $sucursalActiva->id }}">
                         </div>
 
                         <div class="form-group mb-3">
-                            <label for="metodo_pago_id" class="form-label">Método de Pago</label>
+                            <label for="metodo_pago_id">Método de Pago</label>
                             <select class="form-control" id="metodo_pago_id" name="metodo_pago_id" required>
                                 <option value="" disabled selected>Seleccione un método de pago</option>
                                 @foreach ($metodosPago as $metodo)
@@ -40,10 +37,19 @@
                                 @endforeach
                             </select>
                         </div>
-                        <input type="hidden" class="form-control" id="fecha" name="fecha" value="{{ now()->format('Y-m-d\TH:i') }}" required>
+
+                        <div class="form-group mb-2" id="montoRecibidoGroup" style="display: none;">
+                            <label for="monto_recibido">Monto Recibido</label>
+                            <input type="number" class="form-control" id="monto_recibido" name="monto_recibido" placeholder="Ingrese el monto recibido" min="0">
+                        </div>
+                        <div class="form-group mb-2" id="vueltoGroup" style="display: none;">
+                            <label for="vuelto">Vuelto</label>
+                            <input type="text" class="form-control bg-light" id="vuelto" name="vuelto" readonly>
+                        </div>
+                        <input type="hidden" id="fecha" name="fecha" value="{{ now()->format('Y-m-d\TH:i') }}" required>
                     </div>
                 </div>
-                <!-- Búsqueda y selección de productos -->
+
                 <div class="card mt-3">
                     <div class="card-body">
                         <h5 class="mb-3">Buscar y Agregar Productos</h5>
@@ -68,9 +74,7 @@
             </form>
         </div>
 
-        <!-- Carrito de compras y detalles -->
         <div class="col-md-4">
-            <!-- Carrito de compras -->
             <div class="card">
                 <div class="card-body">
                     <h5 class="mb-3">Carrito de Compras</h5>
@@ -78,7 +82,6 @@
                 </div>
             </div>
 
-            <!-- Detalles del total de la venta -->
             <div class="card mt-3">
                 <div class="card-body">
                     <h5 class="mb-3">Resumen del Pedido</h5>
@@ -94,12 +97,15 @@
                         <label>Total Neto:</label>
                         <input type="text" id="totalConIva" class="form-control bg-light" readonly>
                     </div>
-                    <button type="button" class="btn btn-primary w-100" onclick="submitForm()"><i class="fas fa-shopping-cart"></i> Finalizar Venta</button>
+                    <button type="button" class="btn btn-primary w-100" onclick="submitForm()">
+                        <i class="fas fa-shopping-cart"></i> Finalizar Venta
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 
 <!-- Modales -->
 @include('modals.confirmacion')
@@ -176,6 +182,71 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const metodoPagoSelect = document.getElementById('metodo_pago_id');
+    const montoRecibidoGroup = document.getElementById('montoRecibidoGroup');
+    const montoRecibidoInput = document.getElementById('monto_recibido');
+    const vueltoGroup = document.getElementById('vueltoGroup');
+    const vueltoInput = document.getElementById('vuelto');
+    const totalConIvaField = document.getElementById('totalConIva');
+
+    function toggleMontoRecibido() {
+        const metodoSeleccionado = metodoPagoSelect.options[metodoPagoSelect.selectedIndex].text;
+        const totalConIva = parseFloat(totalConIvaField.value.replace('$', '')) || 0;
+
+        if (metodoSeleccionado === "Efectivo" && totalConIva > 0) {
+            montoRecibidoGroup.style.display = 'block';
+        } else {
+            montoRecibidoGroup.style.display = 'none';
+            montoRecibidoInput.value = ''; // Limpiar el valor del monto recibido
+            vueltoGroup.style.display = 'none';
+            vueltoInput.value = ''; // Limpiar el vuelto
+        }
+    }
+
+    function calculateVuelto() {
+        const totalConIva = parseFloat(totalConIvaField.value.replace('$', '')) || 0;
+        const montoRecibido = parseFloat(montoRecibidoInput.value) || 0;
+
+        if (montoRecibido >= totalConIva) {
+            const vuelto = montoRecibido - totalConIva;
+            vueltoGroup.style.display = 'block';
+            vueltoInput.value = `$${vuelto.toFixed(0)}`;
+        } else {
+            vueltoGroup.style.display = 'none';
+            vueltoInput.value = '';
+        }
+    }
+
+    // Detectar cambios en el método de pago
+    metodoPagoSelect.addEventListener('change', toggleMontoRecibido);
+
+    // Detectar cambios en el monto recibido
+    montoRecibidoInput.addEventListener('input', calculateVuelto);
+
+    // Actualizar lógica al cambiar el carrito o los totales
+    function monitorCartChanges() {
+        toggleMontoRecibido(); // Recalcular si se debe mostrar el campo
+        calculateVuelto(); // Recalcular el vuelto si el monto recibido ya está ingresado
+    }
+
+    // Llamar a monitorCartChanges cada vez que el carrito cambia
+    const cartElement = document.getElementById('cart');
+    const totalElements = [totalConIvaField]; // Añadir cualquier otro elemento que afecte el total
+
+    // Observar cambios en el carrito
+    new MutationObserver(monitorCartChanges).observe(cartElement, { childList: true, subtree: true });
+
+    // Observar cambios en el total
+    totalElements.forEach((el) => {
+        el.addEventListener('change', monitorCartChanges);
+    });
+
+    // Llamar a toggleMontoRecibido al cargar la página
+    toggleMontoRecibido();
+});
+
+    
     // Cargar productos desde el backend
     let products = @json($productos);
     let cart = [];
@@ -187,7 +258,7 @@
         products.forEach(product => {
             const productRow = `
                 <tr>
-                    <td>${product.nombre}</td>
+                    <td>${product.nombre} - ${product.unidad_medida.abreviatura}</td>
                     <td>$${product.precioventa.toFixed(0)}</td>
                     <td>${product.inventarios.length > 0 ? product.inventarios[0].cantidad : 'N/A'}</td>
                     <td>
@@ -214,7 +285,7 @@
 
 function addProductToCart(productId, productName, productPrice, productQuantity, inventoryId, unitType) {
     const existingItem = cart.find(item => item.id === productId);
-    const initialQuantity = unitType === 'kg' ? 0.1 : 1; // Iniciar con 0.1 si es kg
+    const initialQuantity = unitType === 'KG' ? 0.1 : 1; // Iniciar con 0.1 si es kg
     if (existingItem) {
         existingItem.quantity += initialQuantity; // Incrementar según la unidad
     } else {
@@ -236,7 +307,7 @@ function updateCartDisplay() {
     const cartElement = document.getElementById('cart');
     cartElement.innerHTML = '';
     cart.forEach((item, index) => {
-        const quantityValue = item.unit === 'kg' ? item.quantity.toFixed(2) : item.quantity; // Mostrar decimales si es kg
+        const quantityValue = item.unit === 'KG' ? item.quantity.toFixed(2) : item.quantity; // Mostrar decimales si es kg
         const itemElement = `
             <div class="cart-item d-flex align-items-center justify-content-between mb-2">
                 <input type="hidden" name="detalles[${index}][producto_id]" value="${item.id}">
@@ -267,7 +338,7 @@ function adjustQuantity(productId, change) {
     const item = cart.find(item => item.id === productId);
     if (!item) return;
 
-    const nuevaCantidad = item.unit === 'kg' ? Math.max(0.1, item.quantity + change) : Math.max(1, item.quantity + change);
+    const nuevaCantidad = item.unit === 'KG' ? Math.max(0.1, item.quantity + change) : Math.max(1, item.quantity + change);
 
     if (nuevaCantidad > item.inventory) {
         Swal.fire({
@@ -297,10 +368,10 @@ function inputQuantity(productId, value) {
     const item = cart.find(item => item.id === productId);
     if (!item) return;
 
-    let parsedValue = item.unit === 'kg' ? parseFloat(value) : parseInt(value);
-    parsedValue = isNaN(parsedValue) ? (item.unit === 'kg' ? 0.1 : 1) : parsedValue; // Si no es válido, asignar valor mínimo
+    let parsedValue = item.unit === 'KG' ? parseFloat(value) : parseInt(value);
+    parsedValue = isNaN(parsedValue) ? (item.unit === 'KG' ? 0.1 : 1) : parsedValue; // Si no es válido, asignar valor mínimo
 
-    item.quantity = Math.max(item.unit === 'kg' ? 0.1 : 1, parsedValue);
+    item.quantity = Math.max(item.unit === 'KG' ? 0.1 : 1, parsedValue);
     updateCartDisplay();
 }
 
@@ -349,6 +420,7 @@ function submitForm() {
     // Obtener y validar los campos antes de enviar la solicitud
     const metodoPago = form.querySelector('select[name="metodo_pago_id"]').value;
     const sucursalId = form.querySelector('input[name="sucursal_id"]').value;
+    const montoRecibidoInput = form.querySelector('input[name="monto_recibido"]'); // Campo de monto recibido
 
     // Verificar si se ha seleccionado el método de pago
     if (!metodoPago) {
@@ -359,6 +431,35 @@ function submitForm() {
             confirmButtonText: 'Aceptar'
         });
         return; // Salir de la función si no se selecciona un método de pago
+    }
+
+    // Inicializar monto_recibido
+    let montoRecibido = null;
+
+    // Si el método de pago es efectivo, validar el monto recibido
+    if (metodoPago === '1') { // Supongamos que '1' es el ID de "Efectivo"
+        if (!montoRecibidoInput || montoRecibidoInput.value.trim() === '') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Monto Recibido Requerido',
+                text: 'Por favor, ingrese el monto recibido para calcular el vuelto.',
+                confirmButtonText: 'Aceptar'
+            });
+            return; // Salir si no hay monto recibido
+        }
+        montoRecibido = parseFloat(montoRecibidoInput.value);
+
+        // Validar que el monto recibido sea mayor o igual al total
+        const totalVenta = parseFloat(document.getElementById('totalConIva').value.replace('$', '').replace(',', '')); // Asegúrate de que tu totalConIva esté correctamente capturado
+        if (isNaN(montoRecibido) || montoRecibido < totalVenta) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Monto Insuficiente',
+                text: 'El monto recibido no puede ser menor al total de la venta.',
+                confirmButtonText: 'Aceptar'
+            });
+            return; // Salir si el monto recibido es menor al total
+        }
     }
 
     // Verificar si el carrito tiene productos agregados
@@ -378,6 +479,7 @@ function submitForm() {
         sucursal_id: sucursalId, // Asignar correctamente el valor de sucursal
         metodo_pago_id: metodoPago,
         fecha: form.querySelector('input[name="fecha"]').value,
+        monto_recibido: montoRecibido, // Incluir el monto recibido si aplica
         detalles: cart.map((item, index) => ({
             producto_id: item.id,
             precio_unitario: item.price,
@@ -396,47 +498,66 @@ function submitForm() {
         }
     })
     .then(response => {
-        console.log("Respuesta recibida:", response); // Verificar la respuesta del backend
-        if (response.data.success) {
-            const ventaId = response.data.venta_id;
+    if (response.status === 200 && response.data.success) {
+        const ventaId = response.data.venta_id;
 
-            // Mostrar el modal de confirmación si la venta se realizó correctamente
-            const modalElement = document.getElementById('printModal');
-            if (modalElement) {
-                const printModal = new bootstrap.Modal(modalElement);
-                printModal.show();
+        // Calcular el vuelto solo si el método de pago es "Efectivo"
+        const totalVenta = parseFloat(document.getElementById('totalConIva').value.replace('$', '').replace(',', '')) || 0;
+        let montoRecibido = totalVenta; // Asumimos que el monto recibido es igual al total para métodos distintos de efectivo
+        let vuelto = 0;
 
-                document.getElementById('yesPrintButton').onclick = function() {
-                    window.open(`/ventas/${ventaId}/print`, '_blank');
-                    printModal.hide();
-                    window.location.href = '/ventas';
-                };
-
-                document.getElementById('noPrintButton').onclick = function() {
-                    window.location.href = '/ventas';
-                };
-            }
-        } else {
-            // Mostrar mensaje de error si la respuesta no indica éxito
-            Swal.fire({
-                icon: 'error',
-                title: 'Error en la Venta',
-                text: response.data.error || 'Hubo un problema al procesar la venta.',
-                confirmButtonText: 'Aceptar'
-            });
+        // Si el método de pago es efectivo, asignamos el monto recibido real y calculamos el vuelto
+        const metodoPago = document.getElementById('metodo_pago_id').value;
+        if (metodoPago === "1") { // Supongamos que "1" es el ID de "Efectivo"
+            montoRecibido = parseFloat(document.getElementById('monto_recibido').value) || 0;
+            vuelto = montoRecibido - totalVenta;
         }
-    })
+
+        // Mostrar los datos en el modal
+        document.getElementById('modalMontoRecibido').textContent = `$${montoRecibido.toFixed(0)}`;
+        document.getElementById('modalVuelto').textContent = `$${vuelto.toFixed(0)}`;
+        document.getElementById('modalTotalVenta').textContent = `$${totalVenta.toFixed(0)}`;
+
+        // Mostrar el modal de confirmación
+        const modalElement = document.getElementById('printModal');
+        if (modalElement) {
+            const printModal = new bootstrap.Modal(modalElement);
+            printModal.show();
+
+            document.getElementById('yesPrintButton').onclick = function() {
+                window.open(`/ventas/${ventaId}/print`, '_blank');
+                printModal.hide();
+                window.location.href = '/ventas';
+            };
+
+            document.getElementById('noPrintButton').onclick = function() {
+                window.location.href = '/ventas';
+            };
+        }
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error en la Venta',
+            text: response.data.error || 'Hubo un problema al procesar la venta.',
+            confirmButtonText: 'Aceptar'
+        });
+    }
+})
+
     .catch(error => {
         console.error('Error en el proceso de venta:', error); // Mostrar el error en la consola para depuración
-        // Mostrar mensaje de error con SweetAlert
+        // Determinar si el error tiene una respuesta del backend
+    if (error.response && error.response.data) 
         Swal.fire({
             icon: 'error',
             title: 'Error en la Venta',
             text: 'Ocurrió un error inesperado. Por favor, intente de nuevo.',
             confirmButtonText: 'Aceptar'
+            
         });
     });
 }
+
 
 
 </script>

@@ -51,11 +51,11 @@
     <!-- Totales Finales -->
     <div class="totals">
         <p><strong>Monto de Apertura:</strong> ${{ number_format($caja->monto_apertura, 0, ',', '.') }}</p>
-        <p><strong>Total Ventas:</strong> ${{ number_format($totalVentas, 0, ',', '.') }}</p>
-        <!-- <p><strong>Gastos de Caja:</strong> ${{ number_format($caja->total_gastos, 0, ',', '.') }}</p> -->
-        <p><strong>Balance Final:</strong> ${{ number_format($balanceFinal, 0, ',', '.') }}</p>
+        <p><strong>Total Ventas (Efectivo):</strong> ${{ number_format($totalEfectivo, 0, ',', '.') }}</p>
+        <p><strong>Balance Final (A Entregar):</strong> ${{ number_format($balanceFinal, 0, ',', '.') }}</p>
     </div>
     <hr>
+
 
     <!-- Información Adicional -->
     <div class="additional-info">

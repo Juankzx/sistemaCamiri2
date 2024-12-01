@@ -17,6 +17,12 @@
 
     @if ($cajaAbierta)
         <!-- Botón de cerrar caja en la cabecera con total de ventas -->
+        <div class="btn-group float-right">
+        @if(auth()->user()->hasRole('vendedor'))
+                <a href="{{ route('ventas.index') }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-shopping-cart"></i> Ir a Ventas
+                </a>
+            @endif
         <button 
             class="btn btn-danger btn-sm float-right" 
             {{-- Cambia entre data-toggle y data-bs-toggle según el rol --}}
@@ -32,6 +38,8 @@
             title="Cerrar Caja">
             <i class="fas fa-lock"></i> Cerrar Caja
         </button>
+        
+            </div>
     @else
         <!-- Botones para abrir caja y redirigir a ventas -->
         <div class="btn-group float-right">

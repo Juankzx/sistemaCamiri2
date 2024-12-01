@@ -31,6 +31,13 @@
                     <p>Ventas con Tarjeta: {{ $ventasTarjeta }} (${{ number_format($totalTarjeta, 0) }})</p>
                 </div>
             </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <h4>Balance Final (A Entregar):</h4>
+                    <p><strong>Monto de Apertura:</strong> ${{ number_format($caja->monto_apertura, 0) }}</p>
+                    <p><strong>Ventas en Efectivo:</strong> ${{ number_format($totalEfectivo, 0) }}</p>
+                    <p><strong>Total A Entregar:</strong> ${{ number_format($caja->monto_apertura + $totalEfectivo, 0) }}</p>
+                </div>
 
             <h4>Detalle de Ventas:</h4>
             <div class="table-responsive">
