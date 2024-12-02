@@ -11,16 +11,15 @@
         @csrf
         <div class="form-group">
             <label for="producto_id">Productos</label>
-            <select class="form-control select2" id="producto_id" name="producto_ids[]" multiple="multiple" required>
+            <select class="form-control select2" id="producto_id" multiple="multiple">
                 @foreach($productos as $producto)
                     @php
-                        $isAgregado = in_array($producto->id, $productosInventariados); // Verificar si el producto ya está en inventario
+                        $isAgregado = in_array($producto->id, $productosInventariados);
                     @endphp
                     <option value="{{ $producto->id }}" 
                             data-status="{{ $isAgregado ? 'agregado' : 'no-agregado' }}" 
-                            {{ $isAgregado ? 'disabled' : '' }}> <!-- Deshabilitar si ya está en inventario -->
-                        {{ $producto->nombre }} - {{ $producto->codigo_barra }} - {{ $producto->categoria->nombre ?? 'Sin categoría' }} 
-                        
+                            {{ $isAgregado ? 'disabled' : '' }}>
+                        {{ $producto->nombre }} - {{ strtoupper($producto->codigo_barra) }} - {{ $producto->categoria->nombre ?? 'Sin categoría' }} 
                         @if($isAgregado)
                             (Agregado)
                         @endif
@@ -43,7 +42,8 @@
                         <th>Acción</th>
                     </tr>
                 </thead>
-                
+                <tbody>
+                </tbody>
             </table>
         </div>
 
@@ -77,28 +77,10 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     $(document).ready(function() {
-        // Formatear el texto de los productos seleccionados
-        function formatProducto(producto) {
-            if (!producto.id) {
-                return producto.text;
-            }
-
-            var status = $(producto.element).data('status') === 'agregado';
-            var $producto = $('<span>'  + producto.text + '</span>');
-
-            if (status) {
-                $producto.addClass('isAgregado');
-            }
-
-            return $producto;
-        }
-
         // Inicializar Select2
         $('.select2').select2({
             placeholder: "Busca tu Producto...",
-            allowClear: true,
-            templateResult: formatProducto,
-            templateSelection: formatProducto
+            allowClear: true
         });
 
         // Inicializar DataTable
@@ -130,24 +112,28 @@
             let productosSeleccionados = $(this).val();
 
             productosSeleccionados.forEach(function(productoId) {
-                // Verificar si el producto ya existe en la tabla
                 if (productosEnTabla.includes(productoId)) {
-                    
-                } else {
-                    // Añadir el producto al array de productos en la tabla
-                    productosEnTabla.push(productoId);
-
-                    // Agregar el producto a la tabla
-                    let productoTexto = $("#producto_id option[value='" + productoId + "']").text();
-                    tabla.row.add([
-                        productoTexto,
-                        '<select class="form-control" name="bodega_id['+ productoId +']">@foreach($bodegas as $bodega)<option value="{{ $bodega->id }}">{{ $bodega->nombre }}</option>@endforeach</select>',
-                        '<input type="number" class="form-control" name="cantidad['+ productoId +']" value="0" required>',
-                        '<input type="number" class="form-control" name="stock_minimo['+ productoId +']" value="0" required>',
-                        '<input type="number" class="form-control" name="stock_critico['+ productoId +']" value="0" required>',
-                        '<button type="button" class="btn btn-danger btn-sm" onclick="eliminarProducto(this, \'' + productoId + '\')">X</button>'
-                    ]).draw();
+                    return;
                 }
+
+                // Añadir el producto al array
+                productosEnTabla.push(productoId);
+
+                // Agregar el producto a la tabla
+                let productoTexto = $("#producto_id option[value='" + productoId + "']").text();
+                tabla.row.add([
+                    `<input type="hidden" name="producto_ids[]" value="${productoId}">
+                     ${productoTexto}`,
+                    '<select class="form-control" name="bodega_id['+ productoId +']">@foreach($bodegas as $bodega)<option value="{{ $bodega->id }}">{{ $bodega->nombre }}</option>@endforeach</select>',
+                    '<input type="number" class="form-control" name="cantidad['+ productoId +']" value="0" required>',
+                    '<input type="number" class="form-control" name="stock_minimo['+ productoId +']" value="0" required>',
+                    '<input type="number" class="form-control" name="stock_critico['+ productoId +']" value="0" required>',
+                    `<button type="button" class="btn btn-danger btn-sm" onclick="eliminarProducto(this, '${productoId}')">X</button>`
+                ]).draw();
+
+                // Deshabilitar el producto en el select
+                $("#producto_id option[value='" + productoId + "']").prop('disabled', true);
+                $('#producto_id').val(null).trigger('change.select2');
             });
         });
 
@@ -156,11 +142,13 @@
             var row = $(button).closest('tr');
             $('#tabla_inventario').DataTable().row(row).remove().draw();
 
-            // Remover el producto del array productosEnTabla
             const index = productosEnTabla.indexOf(productoId);
             if (index > -1) {
                 productosEnTabla.splice(index, 1);
             }
+
+            $("#producto_id option[value='" + productoId + "']").prop('disabled', false);
+            $('#producto_id').trigger('change.select2');
         }
 
         window.eliminarProducto = eliminarProducto;
